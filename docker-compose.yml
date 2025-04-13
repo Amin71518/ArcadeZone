@@ -1,0 +1,38 @@
+# Определение версии Docker Compose и начало описания сервисов
+version: '3'
+
+services:
+  django_az:
+    # Сборка образа для сервиса django из текущей директории
+    build: .
+    # Задание имени контейнера для сервиса django
+    container_name: django_az
+    # Задание команды, которую нужно запустить при запуске контейнера для сервиса django
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/usr/src/app
+    # Открытие порта на хостовой машине и перенаправление на порт в контейнере
+    ports:
+      - 8000:8000
+    # Зависимость от другого сервиса
+    depends_on:
+      - arcadezonedb
+
+  arcadezonedb:
+    # Использование готового образа postgres
+    image: postgres
+    # Задание переменных окружения для контейнера с postgres
+    environment:
+      - POSTGRES_DB=ArcadeZone
+      - POSTGRES_USER=arcadezoneadmin
+      - POSTGRES_PASSWORD=0000
+     # Задание имени контейнера для сервиса pgdb
+    container_name: arcadezonedb
+     # Связывание тома с директорией в контейнере для сохранения данных postgres
+    ports:
+      - "54320:5432"
+    volumes:
+      - arcadezonedbdata:/var/lib/postgresql/data/
+
+volumes:
+  arcadezonedbdata: null

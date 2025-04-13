@@ -1,0 +1,81 @@
+register_player
+{
+    "nickname": "testplayer1",
+    "password": "9"
+}
+
+ http://localhost:8000/players/register/
+
+get_players
+-
+ http://localhost:8000/players/
+
+get_player
+-
+ http://localhost:8000/players/2/
+
+delete_player
+-
+ http://localhost:8000/players/4/delete/
+
+update_player_password
+{
+    "password": "99"
+}
+ http://localhost:8000/players/2/update_password/
+
+get_games
+-
+http://localhost:8000/games/
+
+get_game
+-
+http://localhost:8000/games/2/
+
+add_game
+{
+    "id": 4,
+    "name": "daname",
+    "code": "link",
+    "genre": "races",
+    "pictures": "link"
+}
+http://localhost:8000/games/add/
+
+delete_game
+-
+http://localhost:8000/games/4/delete/
+
+create_record
+
+{
+  "player_id": 1,
+  "game_id": 2,
+  "start_time": "14:30:00",
+  "end_time": "14:40:00",
+  "score": 2500
+}
+ http://localhost:8000/records/add
+
+update_score
+{
+  "start_time": "14:30:00",
+  "end_time": "15:30:00",
+  "score": 333
+}
+ http://localhost:8000/records/1/2/update
+
+get_player_record
+-
+ http://localhost:8000/records/player/2/1
+
+get_top_10_records
+-
+ http://localhost:8000/records/top
+delete_record
+{
+    "player_id": 1,
+    "game_id": 2
+}
+
+ http://localhost:8000/records/1/2/delete
