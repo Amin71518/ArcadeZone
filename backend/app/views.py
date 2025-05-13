@@ -13,17 +13,6 @@ from rest_framework import status
 from .serializers import RegistrationSerializer, LoginSerializer, UserSerializer
 from arcadezonedb.permissions import IsSuperuser
 
-
-def game(request):
-    return HttpResponse("страница приложения games")
-def games_list(request, id):
-    if int(id) < 0:
-        raise Http404()
-    if int(id) == 0:
-        return redirect('home', permanent=True)
-    return HttpResponse(f"<h1>Игра под номером {id}</h1>")
-def archive(request, year):
-    return HttpResponse(f"<h1>Архив по годам</h1><p>{year}</p>")
 def pageNotFound(request, exception):
     return HttpResponseNotFound('<h1>Страница не найдена</h1>')
 

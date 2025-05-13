@@ -1,15 +1,13 @@
 from django.urls import path, re_path, include
 
 from app.views import (
-    add_game, archive, create_record, delete_game, delete_player, delete_record, game, games_list, get_game, 
+    add_game,  create_record, delete_game, delete_player, delete_record, get_game, 
     get_games, get_player_record, get_top_10_records, register_player, get_players, get_player, update_current_user,
     update_score, login_player, logout_player
 )
 
 urlpatterns = [
-    path('', game, name='home'),
-    path('list/<int:id>/', games_list),
-    re_path(r'^archive/(?P<year>[0-9]{4})', archive),
+
     
     path('players/register/', register_player, name='register_player'),
     path('players/login/', login_player, name='login_player'),
