@@ -55,7 +55,7 @@ create_record
   "end_time": "14:40:00",
   "score": 2500
 }
- http://localhost:8000/records/add
+ http://localhost:8000/records/add/
 
 update_score
 {
@@ -63,19 +63,19 @@ update_score
   "end_time": "15:30:00",
   "score": 333
 }
- http://localhost:8000/records/1/2/update
+http://localhost:8000/records/1/2/update/
 
 get_player_record
 -
- http://localhost:8000/records/player/2/1
+http://localhost:8000/records/player/2/1/
 
 get_top_10_records
 -
- http://localhost:8000/records/top
+http://localhost:8000/records/top/1/
 delete_record
 {
     "player_id": 1,
     "game_id": 2
 }
 
- http://localhost:8000/records/1/2/delete
+http://localhost:8000/records/1/2/delete/

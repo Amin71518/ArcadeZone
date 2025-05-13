@@ -3,8 +3,15 @@ from django.shortcuts import render, redirect
 import json
 from django.contrib.auth.hashers import make_password
 from django.views.decorators.csrf import csrf_exempt
-from .models import Player, Game, Record
+from .models import User, Record, Game
 from django.utils import timezone
+from .renderers import UserJSONRenderer
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import RegistrationSerializer, LoginSerializer, UserSerializer
+from arcadezonedb.permissions import IsSuperuser
 
 
 def game(request):
@@ -22,88 +29,88 @@ def pageNotFound(request, exception):
 
 
 
-@csrf_exempt  #Отключение протокола безопасности(отключить по окончании проекта)
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def register_player(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            received_nickname = data.get('nickname')
-            received_password = data.get('password')
+    user = request.data.get('user', {})
 
-            if not received_nickname or not received_password:
-                return JsonResponse({'error': 'nickname and password are required'}, status=400)
+    serializer = RegistrationSerializer(data=user)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            if Player.objects.filter(nickname=received_nickname).exists():
-                return JsonResponse({'error': 'User already exists'}, status=400)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_player(request):
+    """
+    Авторизация игрока.
+    """
+    user = request.data.get('user', {})
 
-            # Хешируем пароль перед сохранением
-            hashed_password = make_password(received_password)
-            user = Player.objects.create(nickname=received_nickname, password=hashed_password)
-            
-            return JsonResponse({'message': 'User created successfully', 'user_id': user.id}, status=201)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    serializer = LoginSerializer(data=user)
+    serializer.is_valid(raise_exception=True)
 
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_player(request):
+    """
+    Выход из аккаунта. Добавляем токен в чёрный список.
+    """
+    serializer = UserSerializer(
+        request.user,
+        context={'request': request}  # Чтобы передать request внутрь сериализатора
+    )
+    serializer.logout()
+
+    return Response({'message': 'Successfully logged out.'}, status=status.HTTP_200_OK)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_player(request):
+    """
+    Получение данных текущего авторизованного пользователя.
+    """
+    serializer = UserSerializer(request.user)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_current_user(request):
+    """
+    Обновление данных текущего авторизованного пользователя.
+    """
+    serializer_data = request.data.get('user', {})
+
+    serializer = UserSerializer(
+        request.user, data=serializer_data, partial=True
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 @csrf_exempt
-def get_players(request):
-    """Получить список всех игроков."""
-    if request.method == "GET":
-        players = list(Player.objects.values())
-        return JsonResponse({"players": players}, safe=False)
-
-@csrf_exempt
-def get_player(request, player_id):
-    """Получить информацию об игроке по ID."""
-    if request.method == "GET":
-        try:
-            player = Player.objects.get(id=player_id) # Player.objects.get(id=player_id).values()
-            return JsonResponse({
-                "id": player.id,
-                "nickname": player.nickname,
-                "password": player.password,
-                "adm_password": player.adm_password
-            })
-        except Player.DoesNotExist:
-            return JsonResponse({"error": "Player not found"}, status=404)
-
-@csrf_exempt
+@permission_classes([IsSuperuser])
 def delete_player(request, player_id):
-    """Удалить игрока по ID."""
     if request.method == "DELETE":
         try:
-            player = Player.objects.get(id=player_id)
+            player = User.objects.get(id=player_id)
             player.delete()
             return JsonResponse({"message": "Player deleted successfully"})
-        except Player.DoesNotExist:
+        except User.DoesNotExist:
             return JsonResponse({"error": "Player not found"}, status=404)
-        
+
 @csrf_exempt
-def update_player_password(request, player_id):
-    """Обновить пароль игрока по ID."""
-    if request.method == "PUT":
-        try:
-            player = Player.objects.get(id=player_id)
-            data = json.loads(request.body)
-            new_password = data.get("password")
-
-            if not new_password:
-                return JsonResponse({"error": "New password is required"}, status=400)
-
-            player.password = make_password(new_password)
-            player.save()
-
-            return JsonResponse({
-                "message": "Password updated successfully",
-                "id": player.id,
-                "nickname": player.nickname
-            })
-        except Player.DoesNotExist:
-            return JsonResponse({"error": "Player not found"}, status=404)
-
+@permission_classes([IsSuperuser])
+def get_players(request):
+    if request.method == "GET":
+        players = list(User.objects.values())
+        return JsonResponse({"players": players}, safe=False)
 
 @csrf_exempt
 def get_games(request):
@@ -121,15 +128,16 @@ def get_game(request, game_id):
             return JsonResponse({
                 "id": game.id,
                 "name": game.name,
-                "code_url": game.code_url,
+                "code_url": game.code,
                 "genre": game.genre,
-                "picture_url": game.picture_url
+                "picture_url": game.pictures
             })
         except Game.DoesNotExist:
             return JsonResponse({"error": "Game not found"}, status=404)
 
 
 @csrf_exempt
+@permission_classes([IsSuperuser])
 def add_game(request):
     """Добавить новую игру."""
     if request.method == "POST":
@@ -162,6 +170,7 @@ def add_game(request):
         })
 
 @csrf_exempt
+@permission_classes([IsSuperuser])
 def delete_game(request, game_id):
     """Удалить игру."""
     if request.method == "DELETE":
@@ -174,6 +183,7 @@ def delete_game(request, game_id):
         
 
 @csrf_exempt
+@permission_classes([IsAuthenticated])
 def create_record(request):
     """Создание нового рекорда игрока."""
     if request.method == "POST":
@@ -188,7 +198,7 @@ def create_record(request):
             return JsonResponse({"error": "player_id and score are required"}, status=400)
 
         try:
-            player = Player.objects.get(id=player_id)
+            player = User.objects.get(id=player_id)
             record = Record.objects.create(player_id=player_id, game_id=game_id, 
                                            start_time=start_time, end_time = end_time, score=score)
             return JsonResponse({
@@ -202,10 +212,11 @@ def create_record(request):
                     "score": record.score
                 }
             })
-        except Player.DoesNotExist:
+        except User.DoesNotExist:
             return JsonResponse({"error": "Player not found"}, status=404)
 
 @csrf_exempt
+@permission_classes([IsSuperuser])
 def update_score(request, player_id, game_id):
     """Обновление score по id записи."""
     if request.method == "PUT":
@@ -232,10 +243,11 @@ def update_score(request, player_id, game_id):
             return JsonResponse({"error": "Record not found"}, status=404)
 
 @csrf_exempt
-def get_player_record(request, player_id):
+@permission_classes([IsSuperuser])
+def get_player_record(request, player_id, game_id):
     """Вывод рекордов игрока."""
     if request.method == "GET":
-        records = Record.objects.filter(player_id=player_id).order_by("-score")
+        records = Record.objects.filter(player_id=player_id, game_id=game_id).order_by("-score")
         if not records:
             return JsonResponse({"error": "No records found for this player"}, status=404)
 
@@ -263,17 +275,14 @@ def get_top_10_records(request, game_id):
         })
 
 @csrf_exempt
-def delete_record(request):
+@permission_classes([IsSuperuser])
+def delete_record(request, player_id, game_id):
     """Удаление записи рекорда игрока."""
     if request.method == "DELETE":
-        data=json.loads(request)
-        player_id = data.get["player_id"]
-        game_id = data.get["game_id"]
         try:
             record = Record.objects.get(player_id=player_id, game_id=game_id)
             record.delete()
             return JsonResponse({"message": "Record deleted"})
         except Record.DoesNotExist:
             return JsonResponse({"error": "Record not found"}, status=404)
-
 
