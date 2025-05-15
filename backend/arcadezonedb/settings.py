@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'app', # Добавляем наше приложение из "Шаг 5"
     'django.contrib.postgres', #это модуль Django, который предоставляет интеграцию с базой данных PostgreSQL 
+    'corsheaders',
 ]
 
 
@@ -52,6 +53,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 
 ROOT_URLCONF = 'arcadezonedb.urls'
@@ -118,6 +121,10 @@ TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
 
 USE_TZ = True
+
+CORS_ALLOWED_ORIGINS = [
+"http://localhost:5173",
+]
 
 
 # Static files (CSS, JavaScript, Images)

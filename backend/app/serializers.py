@@ -160,7 +160,7 @@ class UserSerializer(serializers.ModelSerializer):
 
         # Заносим токен в Blacklist
         Command.update_blacklist(token_str)
- 
+"""
 class LogoutSerializer(serializers.Serializer):
     token = serializers.CharField()
 
@@ -192,3 +192,4 @@ class LogoutSerializer(serializers.Serializer):
 
         # Добавляем токен в чёрный список
         BlackListedToken.objects.create(token=token, expires_at=expires_at)
+"""

@@ -10,7 +10,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Games from './pages/Games';
 import Account from './pages/Account';
-
+import Logout from './pages/Logout';
 function App() {
 return (
 <AuthProvider>
@@ -21,6 +21,8 @@ return (
 <Route path="/games" element={<Games />} /> {/* Доступна всем */}
 <Route path="/account" element={<Account />} /> {/* Только авторизованным */}
 <Route path="" element={<Games />} /> {/* По умолчанию */}
+
+<Route path="/logout" element={<Logout />} /> 
 </Routes>
 </BrowserRouter>
 </AuthProvider>

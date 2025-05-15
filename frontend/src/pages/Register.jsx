@@ -4,7 +4,7 @@ import { registerPlayer } from '../api/api';
 import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
-const [formData, setFormData] = useState({ email: '', username: '', password: '' });
+const [formData, setFormData] = useState({ "email": '', "username": '', "password": '' });
 const [error, setError] = useState(null);
 const { loginUser } = useContext(AuthContext);
 const navigate = useNavigate();
