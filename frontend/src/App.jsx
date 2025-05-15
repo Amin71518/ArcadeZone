@@ -3,33 +3,28 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Games from './pages/Games';
+import Account from './pages/Account';
+
+function App() {
+return (
+<AuthProvider>
+<BrowserRouter>
+<Routes>
+<Route path="/login" element={<Login />} />
+<Route path="/register" element={<Register />} />
+<Route path="/games" element={<Games />} /> {/* Доступна всем */}
+<Route path="/account" element={<Account />} /> {/* Только авторизованным */}
+<Route path="" element={<Games />} /> {/* По умолчанию */}
+</Routes>
+</BrowserRouter>
+</AuthProvider>
+);
 }
 
-export default App
+export default App;

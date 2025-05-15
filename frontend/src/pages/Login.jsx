@@ -1,6 +1,6 @@
 import { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { login } from '../api/api';
+import { loginPlayer } from '../api/api';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
@@ -16,7 +16,7 @@ const Login = () => {
     setError(null);
 
     try {
-      const data = await login(email, password);
+      const data = await loginPlayer(email, password);
       loginUser(data.token, { email: data.email, username: data.username });
       navigate('/games');  // Перейти к играм после логина
     } catch (err) {
