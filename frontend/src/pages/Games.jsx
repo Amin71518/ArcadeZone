@@ -1,29 +1,63 @@
 import { useEffect, useState } from 'react';
 import { getGames } from '../api/api';
+import GamesList from '../pages/GamesList';
+import Loader from '../components/Loader'; // Создайте простой компонент-лоадер
 
 const Games = () => {
-const [games, setGames] = useState([]);
+  const [games, setGames] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-useEffect(() => {
-getGames()
-.then((data) => setGames(data.games))
-.catch((err) => console.error('Ошибка загрузки игр', err));
-}, []);
+  useEffect(() => {
+    const fetchGames = async () => {
+      try {
+        const response = await getGames();
+        
+        // Дебаггинг: выведем полученные данные в консоль
+        console.log('API Response:', response);
+        
+        // Варианты обработки разных структур ответа
+        const gamesData = response.data?.games || 
+                         response.games || 
+                         response.data || 
+                         response;
+        
+        if (!Array.isArray(gamesData)) {
+          throw new Error('Получен некорректный формат данных');
+        }
+        
+        setGames(gamesData);
+      } catch (err) {
+        console.error('Ошибка загрузки:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-return (
-<div>
-<h2>Игры</h2>
-{games.length === 0 ? (
-<p>Нет доступных игр</p>
-) : (
-<ul>
-{games.map((game) => (
-<li key={game.id}>{game.name}</li>
-))}
-</ul>
-)}
-</div>
-);
+    fetchGames();
+  }, []);
+
+  if (loading) {
+    return <Loader />;
+  }
+
+  if (error) {
+    return (
+      <div className="error-container">
+        <h2>Произошла ошибка</h2>
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()}>Попробовать снова</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="games-page">
+      <h1>Каталог игр</h1>
+      <GamesList games={games} />
+    </div>
+  );
 };
 
 export default Games;

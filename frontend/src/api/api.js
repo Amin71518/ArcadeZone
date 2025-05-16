@@ -74,7 +74,7 @@ headers: {
 'Content-Type': 'application/json',
 Authorization: `Token ${token}`,
 },
-body: JSON.stringify(updateData),
+body: JSON.stringify({ user: updateData }),
 });
 
 if (!response.ok) throw new Error('Ошибка обновления данных пользователя');
