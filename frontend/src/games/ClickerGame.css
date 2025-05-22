@@ -5,10 +5,10 @@
 }
 
 .score-board {
-  background-color: #f0f0f0;
-  padding: 20px;
+  background-color: #582a2a;
+  padding: 10px;
   border-radius: 10px;
-  margin: 20px auto;
+  margin: 10px auto;
   max-width: 300px;
 }
 
@@ -36,10 +36,10 @@
 .shop {
   margin-top: 40px;
   padding: 20px;
-  background-color: #e0e0e0;
+  background-color: #8e1616;
   border-radius: 10px;
   max-width: 500px;
-  margin: 20px auto;
+  margin: 10px auto;
 }
 
 .upgrade-button {

@@ -7,6 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import ClickerGame from '../games/ClickerGame';
 import SnakeGame from '../games/SnakeGame';
 import TetrisGame from '../games/TetrisGame';
+import './GameView.css'
 
 const GAME_COMPONENTS = {
   ClickerGame,
@@ -72,11 +73,10 @@ const GameView = () => {
   const GameComponent = GAME_COMPONENTS[game.code];
 
   return (
-    <div className="game-view-flex" style={{ display: 'flex', gap: '40px', alignItems: 'flex-start', marginLeft: '100px' }}>
+    <div className="game-view-container"> {/* Добавляем класс для внешнего контейнера */}
       {/* Левая часть: игра */}
-      <div style={{ flex: 1 }}>
+      <div className="game-content-wrapper"> {/* Добавляем класс для обертки игрового контента */}
         <h2>{game.name}</h2>
-        <p>{game.description}</p>
         {game.image && <img src={game.image} alt={game.name} width={300} />}
         <div style={{ marginTop: '1rem' }}>
           {GameComponent ? (
@@ -87,46 +87,17 @@ const GameView = () => {
         </div>
       </div>
       {/* Правая часть: боковая панель с кнопками */}
-      <div className="side-panel" style={{
-        minWidth: 220,
-        background: '#222',
-        padding: '24px 18px',
-        borderRadius: 10,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'stretch',
-        alignSelf: 'end'
-      }}>
+      <div className="side-panel"> {/* Этот класс уже был */}
         <button
           onClick={async () => navigate('/')}
-          style={{
-            width: '100%',
-            padding: '12px',
-            fontSize: '16px',
-            background: '#4caf50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            marginBottom: '12px'
-          }}
+          className="side-panel-button exit-button" // Добавляем классы для кнопок
         >
           Выйти
         </button>
         <button
           onClick={handleSaveResult}
           disabled={!session.startTime || playerId == null}
-          style={{
-            width: '100%',
-            padding: '12px',
-            fontSize: '16px',
-            background: '#1976d2',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer'
-          }}
+          className="side-panel-button save-button" // Добавляем классы для кнопок
         >
           Сохранить
         </button>

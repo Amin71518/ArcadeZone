@@ -32,6 +32,7 @@ return (
 <input name="description" placeholder="Описание" onChange={handleChange} />
 <input name="image" placeholder="Ссылка на изображение" onChange={handleChange} />
 <input name="rating" type="number" step="0.1" min="0" max="5" onChange={handleChange} />
+<input name="code" placeholder="Имя компонента (например, ClickerGame)" value={formData.code} onChange={handleChange} required />
 <button type="submit">Добавить игру</button>
 </form>
 );

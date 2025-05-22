@@ -26,7 +26,12 @@ def register_player(request):
     serializer = RegistrationSerializer(data=user)
     if serializer.is_valid():
         serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response({
+            "username":  serializer.data["username"],
+            "email": serializer.data["email"],
+             "token" : serializer.data["token"]
+        }
+            , status=status.HTTP_201_CREATED)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -41,7 +46,11 @@ def login_player(request):
     serializer = LoginSerializer(data=user)
     serializer.is_valid(raise_exception=True)
 
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response({
+            "username":  serializer.data["username"],
+            "email": serializer.data["email"],
+             "token" : serializer.data["token"]
+        }, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -65,7 +74,11 @@ def get_player(request):
     Получение данных текущего авторизованного пользователя.
     """
     serializer = UserSerializer(request.user)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response({
+            "username":  serializer.data["username"],
+            "email": serializer.data["email"],
+             "token" : serializer.data["token"]
+        }, status=status.HTTP_200_OK)
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -81,9 +94,14 @@ def update_current_user(request):
     serializer.is_valid(raise_exception=True)
     serializer.save()
 
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response({
+            "username":  serializer.data["username"],
+            "email": serializer.data["email"],
+             "token" : serializer.data["token"]
+        }, status=status.HTTP_200_OK)
 
 @csrf_exempt
+@api_view(['DELETE'])
 @permission_classes([IsSuperuser])
 def delete_player(request, player_id):
     if request.method == "DELETE":
@@ -95,10 +113,11 @@ def delete_player(request, player_id):
             return JsonResponse({"error": "Player not found"}, status=404)
 
 @csrf_exempt
+@api_view(['GET'])
 @permission_classes([IsSuperuser])
 def get_players(request):
     if request.method == "GET":
-        players = list(User.objects.values())
+        players = list(User.objects.values("email", "username", "id"))
         return JsonResponse({"players": players}, safe=False)
 
 @csrf_exempt
@@ -109,6 +128,8 @@ def get_games(request):
         return JsonResponse({"games": games}, safe=False)
 
 @csrf_exempt
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_game(request, game_id):
     """Получить информацию об одной игре."""
     if request.method == "GET":
@@ -117,7 +138,7 @@ def get_game(request, game_id):
             return JsonResponse({
                 "id": game.id,
                 "name": game.name,
-                "code_url": game.code,
+                "code": game.code,
                 "genre": game.genre,
                 "picture_url": game.pictures
             })
@@ -126,6 +147,7 @@ def get_game(request, game_id):
 
 
 @csrf_exempt
+@api_view(['POST'])
 @permission_classes([IsSuperuser])
 def add_game(request):
     """Добавить новую игру."""
@@ -159,6 +181,7 @@ def add_game(request):
         })
 
 @csrf_exempt
+@api_view(['DELETE'])
 @permission_classes([IsSuperuser])
 def delete_game(request, game_id):
     """Удалить игру."""
@@ -172,39 +195,76 @@ def delete_game(request, game_id):
         
 
 @csrf_exempt
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_record(request):
-    """Создание нового рекорда игрока."""
+    """Создание нового рекорда игрока. Если рекорд уже есть — обновляется только если новый лучше."""
     if request.method == "POST":
         data = json.loads(request.body)
         try:
             player_id = data["player_id"]
             game_id = data["game_id"]
-            start_time = data["start_time"]  # строка формата ISO (например, "2025-04-04T18:30:00Z")
+            start_time = data["start_time"]
             end_time = data["end_time"]
             score = data["score"]
         except KeyError:
-            return JsonResponse({"error": "player_id and score are required"}, status=400)
+            return JsonResponse({"error": "player_id, game_id, score, start_time и end_time обязательны"}, status=400)
 
         try:
             player = User.objects.get(id=player_id)
-            record = Record.objects.create(player_id=player_id, game_id=game_id, 
-                                           start_time=start_time, end_time = end_time, score=score)
-            return JsonResponse({
-                "message": "Record created",
-                "record": {
-                    "id": record.id,
-                    "player_id": record.player_id,
-                    "game_id": record.game_id,
-                    "start_time": record.start_time,
-                    "end_time": record.end_time,
-                    "score": record.score
-                }
-            })
         except User.DoesNotExist:
-            return JsonResponse({"error": "Player not found"}, status=404)
+            return JsonResponse({"error": "Игрок не найден"}, status=404)
+
+        # Проверка существующего рекорда
+        existing_record = Record.objects.filter(player_id=player_id, game_id=game_id).first()
+
+        if existing_record:
+            if score > existing_record.score:
+                existing_record.score = score
+                existing_record.start_time = start_time
+                existing_record.end_time = end_time
+                existing_record.save()
+                return JsonResponse({
+                    "message": "Рекорд обновлен",
+                    "record": {
+                        "id": existing_record.id,
+                        "player_id": existing_record.player_id,
+                        "game_id": existing_record.game_id,
+                        "start_time": existing_record.start_time,
+                        "end_time": existing_record.end_time,
+                        "score": existing_record.score
+                    }
+                })
+            else:
+                return JsonResponse({
+                    "message": "Новый результат ниже текущего рекорда",
+                    "current_score": existing_record.score,
+                    "new_score": score
+                }, status=200)
+
+        # Рекорда ещё не было — создаём
+        record = Record.objects.create(
+            player_id=player_id,
+            game_id=game_id,
+            start_time=start_time,
+            end_time=end_time,
+            score=score
+        )
+        return JsonResponse({
+            "message": "Рекорд создан",
+            "record": {
+                "id": record.id,
+                "player_id": record.player_id,
+                "game_id": record.game_id,
+                "start_time": record.start_time,
+                "end_time": record.end_time,
+                "score": record.score
+            }
+        })
+
 
 @csrf_exempt
+@api_view(['PUT'])
 @permission_classes([IsSuperuser])
 def update_score(request, player_id, game_id):
     """Обновление score по id записи."""
@@ -232,6 +292,7 @@ def update_score(request, player_id, game_id):
             return JsonResponse({"error": "Record not found"}, status=404)
 
 @csrf_exempt
+@api_view(['GET'])
 @permission_classes([IsSuperuser])
 def get_player_record(request, player_id, game_id):
     """Вывод рекордов игрока."""
@@ -246,6 +307,7 @@ def get_player_record(request, player_id, game_id):
         })
 
 @csrf_exempt
+@api_view(['GET'])
 def get_top_10_records(request, game_id):
     """Топ 10 игроков по рекордам."""
     if request.method == "GET":
@@ -264,6 +326,7 @@ def get_top_10_records(request, game_id):
         })
 
 @csrf_exempt
+@api_view(['DELETE'])
 @permission_classes([IsSuperuser])
 def delete_record(request, player_id, game_id):
     """Удаление записи рекорда игрока."""

@@ -1,12 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './Tetris.css';
 
-// Размеры игрового поля
-const COLS = 10;
+const COLS = 20;
 const ROWS = 20;
-const BLOCK_SIZE = 30;
 
-// Фигуры тетромино
 const SHAPES = [
   [[1, 1, 1, 1]], // I
   [[1, 1], [1, 1]], // O
@@ -17,314 +14,206 @@ const SHAPES = [
   [[1, 1, 0], [0, 1, 1]]  // Z
 ];
 
-// Цвета фигур
-const COLORS = [
-  '#00FFFF', // I
-  '#FFFF00', // O
-  '#AA00FF', // T
-  '#FFA500', // L
-  '#0000FF', // J
-  '#00FF00', // S
-  '#FF0000'  // Z
-];
+const COLORS = ['#00FFFF', '#FFFF00', '#AA00FF', '#FFA500', '#0000FF', '#00FF00', '#FF0000'];
 
-const Tetris = () => {
+const createEmptyBoard = () => Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
+
+export default function Tetris({ onSessionChange }) {
   const [board, setBoard] = useState(createEmptyBoard());
   const [currentPiece, setCurrentPiece] = useState(null);
   const [nextPiece, setNextPiece] = useState(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [gameOver, setGameOver] = useState(false);
+  const [pos, setPos] = useState({ x: 4, y: 0 });
   const [score, setScore] = useState(0);
-  const [level, setLevel] = useState(1);
+  const [gameOver, setGameOver] = useState(false);
+  const [isStarted, setIsStarted] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [gameStarted, setGameStarted] = useState(false);
+  const [startTime, setStartTime] = useState(null);
 
-  // Создание пустого поля
-  function createEmptyBoard() {
-    return Array(ROWS).fill().map(() => Array(COLS).fill(0));
-  }
+  const scoreTimerRef = useRef(null);
 
-  // Генерация случайной фигуры
   const getRandomPiece = useCallback(() => {
-    const shapeIndex = Math.floor(Math.random() * SHAPES.length);
-    return {
-      shape: SHAPES[shapeIndex],
-      color: COLORS[shapeIndex]
-    };
+    const index = Math.floor(Math.random() * SHAPES.length);
+    return { shape: SHAPES[index], color: COLORS[index] };
   }, []);
 
-  // Инициализация игры
-  const startGame = useCallback(() => {
-    setBoard(createEmptyBoard());
-    setCurrentPiece(getRandomPiece());
-    setNextPiece(getRandomPiece());
-    setPosition({ x: Math.floor(COLS / 2) - 1, y: 0 });
-    setGameOver(false);
-    setScore(0);
-    setLevel(1);
-    setIsPaused(false);
-    setGameStarted(true);
-  }, [getRandomPiece]);
-
-  // Проверка столкновений
-  const checkCollision = useCallback((piece, pos) => {
-    for (let y = 0; y < piece.shape.length; y++) {
-      for (let x = 0; x < piece.shape[y].length; x++) {
-        if (piece.shape[y][x] !== 0) {
-          const newX = pos.x + x;
-          const newY = pos.y + y;
-          
+  const checkCollision = useCallback((shape, offset) => {
+    for (let y = 0; y < shape.length; y++) {
+      for (let x = 0; x < shape[y].length; x++) {
+        if (shape[y][x]) {
+          const newY = y + offset.y;
+          const newX = x + offset.x;
           if (
-            newX < 0 || 
-            newX >= COLS || 
-            newY >= ROWS || 
+            newX < 0 || newX >= COLS || newY >= ROWS ||
             (newY >= 0 && board[newY][newX] !== 0)
-          ) {
-            return true;
-          }
+          ) return true;
         }
       }
     }
     return false;
   }, [board]);
 
-  // Фиксация фигуры на поле
-  const lockPiece = useCallback(() => {
-    const newBoard = [...board];
-    for (let y = 0; y < currentPiece.shape.length; y++) {
-      for (let x = 0; x < currentPiece.shape[y].length; x++) {
-        if (currentPiece.shape[y][x] !== 0) {
-          const boardY = position.y + y;
-          const boardX = position.x + x;
-          if (boardY >= 0) {
-            newBoard[boardY][boardX] = currentPiece.color;
-          }
-        }
+  const merge = useCallback(() => {
+    const newBoard = board.map(row => [...row]);
+    currentPiece.shape.forEach((row, y) => {
+      row.forEach((cell, x) => {
+        if (cell && pos.y + y >= 0) newBoard[pos.y + y][pos.x + x] = currentPiece.color;
+      });
+    });
+    return newBoard;
+  }, [board, currentPiece, pos]);
+
+  const rotate = (matrix) => matrix[0].map((_, i) => matrix.map(row => row[i]).reverse());
+
+  const clearLines = useCallback((newBoard) => {
+    let cleared = 0;
+    const result = newBoard.filter(row => {
+      if (row.every(cell => cell !== 0)) {
+        cleared++;
+        return false;
       }
-    }
-    setBoard(newBoard);
-    setCurrentPiece(nextPiece);
-    setNextPiece(getRandomPiece());
-    setPosition({ x: Math.floor(COLS / 2) - 1, y: 0 });
+      return true;
+    });
+    while (result.length < ROWS) result.unshift(Array(COLS).fill(0));
+    return result;
+  }, []);
 
-    // Проверка проигрыша
-    if (checkCollision(nextPiece, { x: Math.floor(COLS / 2) - 1, y: 0 })) {
-      setGameOver(true);
-    }
-  }, [board, currentPiece, nextPiece, position, checkCollision, getRandomPiece]);
-
-  // Движение фигуры вниз
-  const moveDown = useCallback(() => {
-    if (gameOver || isPaused || !gameStarted) return;
-
-    const newPosition = { ...position, y: position.y + 1 };
-    if (!checkCollision(currentPiece, newPosition)) {
-      setPosition(newPosition);
+  const drop = useCallback(() => {
+    const newPos = { x: pos.x, y: pos.y + 1 };
+    if (!checkCollision(currentPiece.shape, newPos)) {
+      setPos(newPos);
     } else {
-      lockPiece();
-      clearLines();
-    }
-  }, [position, currentPiece, checkCollision, lockPiece, gameOver, isPaused, gameStarted]);
-
-  // Движение влево/вправо
-  const move = useCallback((direction) => {
-    if (gameOver || isPaused || !gameStarted) return;
-
-    const newPosition = { ...position, x: position.x + direction };
-    if (!checkCollision(currentPiece, newPosition)) {
-      setPosition(newPosition);
-    }
-  }, [position, currentPiece, checkCollision, gameOver, isPaused, gameStarted]);
-
-  // Поворот фигуры
-  const rotate = useCallback(() => {
-    if (gameOver || isPaused || !gameStarted) return;
-
-    const rotated = {
-      ...currentPiece,
-      shape: currentPiece.shape[0].map((_, i) => 
-        currentPiece.shape.map(row => row[i]).reverse()
-      )
-    };
-
-    if (!checkCollision(rotated, position)) {
-      setCurrentPiece(rotated);
-    }
-  }, [currentPiece, position, checkCollision, gameOver, isPaused, gameStarted]);
-
-  // Очистка заполненных линий
-  const clearLines = useCallback(() => {
-    let linesCleared = 0;
-    const newBoard = [...board];
-    
-    for (let y = ROWS - 1; y >= 0; y--) {
-      if (newBoard[y].every(cell => cell !== 0)) {
-        newBoard.splice(y, 1);
-        newBoard.unshift(Array(COLS).fill(0));
-        linesCleared++;
-        y++; // Проверить ту же строку снова
+      const merged = merge();
+      const cleared = clearLines(merged);
+      setBoard(cleared);
+      const next = nextPiece;
+      const spawnPos = { x: 4, y: 0 };
+      if (checkCollision(next.shape, spawnPos)) {
+        setGameOver(true);
+        setIsStarted(false);
+        setIsPaused(false);
+      } else {
+        setCurrentPiece(next);
+        setNextPiece(getRandomPiece());
+        setPos(spawnPos);
       }
     }
+  }, [pos, currentPiece, checkCollision, merge, clearLines, nextPiece, getRandomPiece]);
 
-    if (linesCleared > 0) {
-      setBoard(newBoard);
-      setScore(prev => prev + linesCleared * 100 * level);
-      if (score >= level * 1000) {
-        setLevel(prev => prev + 1);
-      }
-    }
-  }, [board, level, score]);
+  const move = useCallback((dx) => {
+    const newPos = { x: pos.x + dx, y: pos.y };
+    if (!checkCollision(currentPiece.shape, newPos)) setPos(newPos);
+  }, [pos, currentPiece, checkCollision]);
 
-  // Обработка клавиш
+  const rotatePiece = useCallback(() => {
+    const rotated = rotate(currentPiece.shape);
+    if (!checkCollision(rotated, pos)) setCurrentPiece({ ...currentPiece, shape: rotated });
+  }, [currentPiece, pos, checkCollision]);
+
+  // ⏱ Очки за каждые 2 секунды
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (!gameStarted) return;
+    if (!isStarted || gameOver || isPaused) return;
+    scoreTimerRef.current = setInterval(() => {
+      setScore(prev => prev + 1);
+    }, 2000);
+    return () => clearInterval(scoreTimerRef.current);
+  }, [isStarted, gameOver, isPaused]);
 
-      switch (e.key) {
-        case 'ArrowLeft':
-          move(-1);
-          break;
-        case 'ArrowRight':
-          move(1);
-          break;
-        case 'ArrowDown':
-          moveDown();
-          break;
-        case 'ArrowUp':
-          rotate();
-          break;
-        case ' ':
-          setIsPaused(prev => !prev);
-          break;
-        default:
-          break;
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [move, moveDown, rotate, gameStarted]);
-
-  // Игровой цикл
+  // 🕒 Старт игры
   useEffect(() => {
-    if (gameOver || isPaused || !gameStarted) return;
-
-    const speed = 1000 - (level - 1) * 100;
-    const gameInterval = setInterval(moveDown, Math.max(speed, 100));
-    return () => clearInterval(gameInterval);
-  }, [moveDown, gameOver, isPaused, level, gameStarted]);
-
-  // Рендер игрового поля
-  const renderBoard = () => {
-    const displayBoard = [...board];
-
-    // Отображение текущей фигуры
-    if (currentPiece && !gameOver) {
-      for (let y = 0; y < currentPiece.shape.length; y++) {
-        for (let x = 0; x < currentPiece.shape[y].length; x++) {
-          if (currentPiece.shape[y][x] !== 0) {
-            const boardY = position.y + y;
-            const boardX = position.x + x;
-            if (boardY >= 0 && boardY < ROWS && boardX >= 0 && boardX < COLS) {
-              displayBoard[boardY][boardX] = currentPiece.color;
-            }
-          }
-        }
+    if (isStarted) {
+      const now = new Date();
+      const pad = (n) => n.toString().padStart(2, '0');
+      const timeString = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      setStartTime(timeString);
+      if (onSessionChange) {
+        onSessionChange({ startTime: timeString, score: 0 });
       }
     }
+  }, [isStarted, onSessionChange]);
 
-    return displayBoard.map((row, y) => (
+  // 🔁 Передаём счёт
+  useEffect(() => {
+    if (isStarted && startTime && onSessionChange) {
+      onSessionChange({ startTime, score });
+    }
+  }, [score, isStarted, startTime, onSessionChange]);
+
+  useEffect(() => {
+    if (!isStarted || gameOver || isPaused) return;
+    const interval = setInterval(() => drop(), 600);
+    return () => clearInterval(interval);
+  }, [drop, gameOver, isStarted, isPaused]);
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (!isStarted || gameOver || !currentPiece || isPaused) return;
+      const key = e.key.toLowerCase();
+      if (key === 'a') move(-1);
+      if (key === 'd') move(1);
+      if (key === 's') drop();
+      if (key === 'w') rotatePiece();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [move, drop, rotatePiece, gameOver, isStarted, currentPiece, isPaused]);
+
+  const handleStartPause = () => {
+    if (!isStarted) {
+      setCurrentPiece(getRandomPiece());
+      setNextPiece(getRandomPiece());
+      setBoard(createEmptyBoard());
+      setScore(0);
+      setPos({ x: 4, y: 0 });
+      setGameOver(false);
+      setIsPaused(false);
+      setIsStarted(true);
+    } else {
+      setIsPaused(prev => !prev);
+    }
+  };
+
+  const render = () => {
+    const display = board.map(row => [...row]);
+    currentPiece?.shape.forEach((row, y) => {
+      row.forEach((cell, x) => {
+        if (cell && pos.y + y >= 0) display[pos.y + y][pos.x + x] = currentPiece.color;
+      });
+    });
+    return display.map((row, y) => (
       <div key={y} className="tetris-row">
         {row.map((cell, x) => (
-          <div 
-            key={x} 
-            className="tetris-cell" 
-            style={{ 
-              backgroundColor: cell || '#1a1a1a',
-              border: cell ? 'none' : '1px solid #333'
-            }}
+          <div
+            key={x}
+            className="tetris-cell"
+            style={{ backgroundColor: cell || '#222' }}
           />
         ))}
       </div>
     ));
   };
 
-  // Рендер следующей фигуры
-  const renderNextPiece = () => {
-    if (!nextPiece) return null;
-
-    return (
-      <div className="next-piece">
-        {nextPiece.shape.map((row, y) => (
-          <div key={y} className="next-piece-row">
-            {row.map((cell, x) => (
-              <div 
-                key={x} 
-                className="next-piece-cell" 
-                style={{ 
-                  backgroundColor: cell ? nextPiece.color : 'transparent'
-                }}
-              />
-            ))}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   return (
-    <div className="tetris-container">
-      <div className="tetris-game">
-        <div className="tetris-board">
-          {renderBoard()}
-        </div>
-        
-        <div className="tetris-info">
-          <h2>Tetris</h2>
-          
-          <div className="info-section">
-            <h3>Следующая фигура:</h3>
-            {renderNextPiece()}
-          </div>
-          
-          <div className="info-section">
-            <h3>Очки: {score}</h3>
-            <h3>Уровень: {level}</h3>
-          </div>
-          
-          {!gameStarted ? (
-            <button className="tetris-button" onClick={startGame}>
-              Начать игру
-            </button>
-          ) : (
-            <button 
-              className="tetris-button" 
-              onClick={() => setIsPaused(prev => !prev)}
-            >
-              {isPaused ? 'Продолжить' : 'Пауза'}
-            </button>
-          )}
-          
-          {gameOver && (
-            <div className="game-over-message">
-              <h2>Игра окончена!</h2>
-              <button className="tetris-button" onClick={startGame}>
-                Играть снова
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+    <div className="tetris-container" style={{ textAlign: 'center' }}>
+      <button onClick={handleStartPause} style={{ marginBottom: 10 }}>
+        {!isStarted ? 'Начать игру' : isPaused ? 'Продолжить' : 'Пауза'}
+      </button>
+       <div style={{ position: 'relative', display: 'inline-block' }}>
+      <div className="tetris-board" style = {
+        {width: !isStarted ? 400 : undefined, // ширина до старта
+    transition: 'width 0.3s'}}>
+      {currentPiece && render()}
+      {isPaused && !gameOver && (
+         <div className="pause-overlay">
+      <span>Пауза</span>
+    </div>
+        )}
+    </div>
       
-      <div className="tetris-controls">
-        <p>Управление:</p>
-        <p>← → - Движение</p>
-        <p>↑ - Поворот</p>
-        <p>↓ - Ускорение</p>
-        <p>Пробел - Пауза</p>
+      <div className="tetris-info" style={{ marginTop: 10 }}>
+        <p>Счёт: {score}</p>
+        {gameOver && <p style={{ color: 'red' }}>Игра окончена</p>}
+      </div>
       </div>
     </div>
   );
-};
-
-export default Tetris;
+}

@@ -143,7 +143,7 @@ Authorization: `Token ${token}`,
 },
 body: JSON.stringify(recordData),
 });
-
+console.log("наше", response)
 if (!response.ok) throw new Error('Ошибка добавления рекорда');
 
 return await response.json();

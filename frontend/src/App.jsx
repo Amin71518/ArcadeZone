@@ -16,7 +16,7 @@ import SnakeGame from './games/SnakeGame';
 import Tetris from './games/TetrisGame';
 import AddGameForm from './pages/AddGameForm';
 import Navbar from './components/Navbar';
-
+import GameView from './pages/GameView';
 
 function App() {
 return (
@@ -34,6 +34,7 @@ return (
 <Route path="/snake" element={<SnakeGame />} />
 <Route path="/tetris" element={<Tetris />} />
 <Route path="/add" element={<AddGameForm/>}/>
+<Route path="/games/:gameId" element={<GameView />} />
 </Routes>
 </BrowserRouter>
 </AuthProvider>

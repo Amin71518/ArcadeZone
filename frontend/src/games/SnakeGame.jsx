@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import './SnakeGame.css';
 
 const SIZE = 20;
 const INIT_SNAKE = [[10, 10]];
@@ -128,7 +129,9 @@ export default function SnakeGame({ onSessionChange }) {
   const handleStart = () => {
     setSnake(INIT_SNAKE);
     setDirIdx(INIT_DIR);
-    setFood(getRandomFood(INIT_SNAKE));
+    if (!isStarted || gameOver) { // Добавляем условие: генерируем еду только если игра не стартовала или был Game Over
+        setFood(getRandomFood(INIT_SNAKE));
+    }
     turnQueue.current = [];
     setGameOver(false);
     setScore(0);
@@ -140,51 +143,41 @@ export default function SnakeGame({ onSessionChange }) {
     setIsPaused((prev) => !prev);
   };
 
+
   const renderField = () => (
-  <div
-    style={{
-      display: "grid",
-      gridTemplateRows: `repeat(${SIZE}, 20px)`,
-      gridTemplateColumns: `repeat(${SIZE}, 20px)`,
-      border: "2px solid black",
-      width: SIZE * 20,
-      height: SIZE * 20,
-      margin: "auto"
-    }}
-    className="snake-board"
-  >
-    {[...Array(SIZE * SIZE)].map((_, i) => {
-      const x = i % SIZE;
-      const y = Math.floor(i / SIZE);
-      const isSnake = snake.some(([sx, sy]) => sx === x && sy === y);
-      const isHead = snake[0][0] === x && snake[0][1] === y;
-      const isFood = food[0] === x && food[1] === y;
-      return (
-        <div
-          key={i}
-          style={{
-            width: 20,
-            height: 20,
-            background: isHead
-              ? "darkgreen"
-              : isSnake
-              ? "lime"
-              : isFood
-              ? "red"
-              : "white",
-            border: "1px solid #eee"
-          }}
-        />
-      );
-    })}
-    {/* Оверлей паузы */}
-    {isPaused && isStarted && !gameOver && (
-      <div className="pause-overlay">
-        <span>Пауза</span>
+    // snake-board теперь просто обертка для позиционирования
+    <div className="snake-board">
+      {/* snake-grid теперь будет основным контейнером для ячеек и слоев */}
+      <div className="snake-grid">
+        {[...Array(SIZE * SIZE)].map((_, i) => {
+          const x = i % SIZE;
+          const y = Math.floor(i / SIZE);
+          const isSnake = snake.some(([sx, sy]) => sx === x && sy === y);
+          const isHead = snake[0][0] === x && snake[0][1] === y;
+          const isFood = food[0] === x && food[1] === y;
+          return (
+            <div
+              key={i}
+              className={
+                isHead ? "head" :
+                isSnake ? "snake" :
+                isFood ? "food" : "cell"
+              }
+            />
+          );
+        })}
+        {isPaused && isStarted && !gameOver && (
+          <>
+            <div className="pause-blur" />
+            <div className="pause-label">
+              <span>Пауза</span>
+            </div>
+          </>
+        )}
       </div>
-    )}
-  </div>
-);
+    </div>
+  );
+
 
   return (
     <div style={{ textAlign: "center" }}>
