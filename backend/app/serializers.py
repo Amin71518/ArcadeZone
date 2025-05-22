@@ -10,7 +10,6 @@ from .clear_expired_tokens import Command
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
-    # Сериализация регистрации пользователя и создания нового.
 
     # Убедитесь, что пароль содержит не менее 8 символов, не более 128,
     # и так же что он не может быть прочитан клиентской стороной
@@ -93,7 +92,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    # Ощуществляет сериализацию и десериализацию объектов User.
+    # Оcуществляет сериализацию и десериализацию объектов User.
 
     # Пароль должен содержать от 8 до 128 символов. Это стандартное правило. Мы
     # могли бы переопределить это по-своему, но это создаст лишнюю работу для

@@ -1,144 +1,202 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import './SnakeGame.css';
 
-const GRID_SIZE = 20;
-const INITIAL_SNAKE = [{ x: 10, y: 10 }];
-const INITIAL_DIRECTION = { x: 0, y: 0 };
+const SIZE = 20;
+const INIT_SNAKE = [[10, 10]];
+const INIT_DIR = 0;
+const SPEED = 200;
 
-const SnakeGame = () => {
-  const [snake, setSnake] = useState(INITIAL_SNAKE);
-  const [food, setFood] = useState({ x: 5, y: 5 });
-  const [direction, setDirection] = useState(INITIAL_DIRECTION);
+const dirs = [
+  [0, -1],  // вверх
+  [1, 0],   // вправо
+  [0, 1],   // вниз
+  [-1, 0],  // влево
+];
+
+const keyToTurn = {
+  a: -1, ArrowLeft: -1,
+  d: 1, ArrowRight: 1,
+};
+
+function areOpposite(dir1, dir2) {
+  return dir1[0] === -dir2[0] && dir1[1] === -dir2[1];
+}
+
+function getRandomFood(snake) {
+  while (true) {
+    const food = [
+      Math.floor(Math.random() * SIZE),
+      Math.floor(Math.random() * SIZE),
+    ];
+    if (!snake.some(([x, y]) => x === food[0] && y === food[1])) return food;
+  }
+}
+
+export default function SnakeGame({ onSessionChange }) {
+  const [snake, setSnake] = useState(INIT_SNAKE);
+  const [dirIdx, setDirIdx] = useState(INIT_DIR);
+  const [food, setFood] = useState(getRandomFood(INIT_SNAKE));
   const [gameOver, setGameOver] = useState(false);
+  const [isStarted, setIsStarted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false); // <-- новое состояние
   const [score, setScore] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [startTime, setStartTime] = useState(null);
 
-  // Генерация новой еды
-  const generateFood = useCallback(() => {
-    const newFood = {
-      x: Math.floor(Math.random() * GRID_SIZE),
-      y: Math.floor(Math.random() * GRID_SIZE)
-    };
-    
-    // Проверка, чтобы еда не появилась на змейке
-    if (snake.some(segment => segment.x === newFood.x && segment.y === newFood.y)) {
-      return generateFood();
-    }
-    
-    return newFood;
-  }, [snake]);
+  const turnQueue = useRef([]);
 
-  // Обработка нажатий клавиш
   useEffect(() => {
-    const handleKeyPress = (e) => {
-      if (!isPlaying) return;
-
-      switch (e.key) {
-        case 'ArrowUp':
-          if (direction.y !== 1) setDirection({ x: 0, y: -1 });
-          break;
-        case 'ArrowDown':
-          if (direction.y !== -1) setDirection({ x: 0, y: 1 });
-          break;
-        case 'ArrowLeft':
-          if (direction.x !== 1) setDirection({ x: -1, y: 0 });
-          break;
-        case 'ArrowRight':
-          if (direction.x !== -1) setDirection({ x: 1, y: 0 });
-          break;
+    const handleKey = (e) => {
+      if (keyToTurn[e.key] !== undefined) {
+        turnQueue.current.push(keyToTurn[e.key]);
       }
     };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
-    document.addEventListener('keydown', handleKeyPress);
-    return () => document.removeEventListener('keydown', handleKeyPress);
-  }, [direction, isPlaying]);
-
-  // Движение змейки
+  // Фиксируем startTime при старте игры
   useEffect(() => {
-    if (!isPlaying || gameOver) return;
+    if (isStarted) {
+      const now = new Date();
+      const pad = (n) => n.toString().padStart(2, '0');
+      const timeString = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      setStartTime(timeString);
+      if (onSessionChange) {
+        onSessionChange({ startTime: timeString, score: 0 });
+      }
+    }
+  }, [isStarted, onSessionChange]);
 
-    const moveSnake = () => {
-      setSnake(prev => {
-        const newSnake = [...prev];
-        const head = { 
-          x: newSnake[0].x + direction.x,
-          y: newSnake[0].y + direction.y
-        };
+  // Сообщаем о каждом изменении счёта
+  useEffect(() => {
+    if (isStarted && startTime && onSessionChange) {
+      onSessionChange({ startTime, score });
+    }
+  }, [score, isStarted, startTime, onSessionChange]);
 
-        // Проверка столкновения с границами
-        if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
-          setGameOver(true);
-          return prev;
+  useEffect(() => {
+    if (!isStarted || gameOver || isPaused) return; // <-- добавлено isPaused
+    const interval = setInterval(() => {
+      setSnake((snake) => {
+        let newDirIdx = dirIdx;
+        if (turnQueue.current.length > 0) {
+          const turn = turnQueue.current.shift();
+          newDirIdx = (dirIdx + turn + 4) % 4;
+          if (snake.length > 1 && areOpposite(dirs[dirIdx], dirs[newDirIdx])) {
+            newDirIdx = dirIdx;
+          } else {
+            setDirIdx(newDirIdx);
+          }
         }
 
-        // Проверка самопересечения
-        if (newSnake.some(segment => segment.x === head.x && segment.y === head.y)) {
+        const dir = dirs[newDirIdx];
+        const head = snake[0];
+        const newHead = [head[0] + dir[0], head[1] + dir[1]];
+
+        if (
+          newHead[0] < 0 || newHead[0] >= SIZE ||
+          newHead[1] < 0 || newHead[1] >= SIZE
+        ) {
           setGameOver(true);
-          return prev;
+          setIsStarted(false);
+          return snake;
         }
 
-        newSnake.unshift(head);
+        if (
+          snake.length > 1 &&
+          snake.some(([x, y]) => x === newHead[0] && y === newHead[1])
+        ) {
+          setGameOver(true);
+          setIsStarted(false);
+          return snake;
+        }
 
-        // Проверка съедания еды
-        if (head.x === food.x && head.y === food.y) {
-          setScore(s => s + 1);
-          setFood(generateFood());
+        let newSnake;
+        if (newHead[0] === food[0] && newHead[1] === food[1]) {
+          newSnake = [newHead, ...snake];
+          setFood(getRandomFood(newSnake));
+          setScore((prev) => prev + 1);
         } else {
-          newSnake.pop();
+          newSnake = [newHead, ...snake.slice(0, -1)];
         }
 
         return newSnake;
       });
-    };
+    }, SPEED);
+    return () => clearInterval(interval);
+  }, [dirIdx, food, gameOver, isStarted, isPaused]); // <-- добавлено isPaused
 
-    const gameInterval = setInterval(moveSnake, 150);
-    return () => clearInterval(gameInterval);
-  }, [direction, food, gameOver, isPlaying, generateFood]);
-
-  // Старт игры
-  const startGame = () => {
-    setSnake(INITIAL_SNAKE);
-    setDirection(INITIAL_DIRECTION);
-    setFood(generateFood());
+  const handleStart = () => {
+    setSnake(INIT_SNAKE);
+    setDirIdx(INIT_DIR);
+    if (!isStarted || gameOver) { // Добавляем условие: генерируем еду только если игра не стартовала или был Game Over
+        setFood(getRandomFood(INIT_SNAKE));
+    }
+    turnQueue.current = [];
     setGameOver(false);
     setScore(0);
-    setIsPlaying(true);
+    setIsPaused(false); // <-- сбрасываем паузу при старте
+    setIsStarted(true);
   };
 
-  return (
-    <div className="snake-game">
-      <div className="score">Счет: {score}</div>
-      
-      <div className="grid">
-        {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, index) => {
-          const x = index % GRID_SIZE;
-          const y = Math.floor(index / GRID_SIZE);
-          const isSnake = snake.some(segment => segment.x === x && segment.y === y);
-          const isHead = snake[0].x === x && snake[0].y === y;
-          const isFood = food.x === x && food.y === y;
+  const handlePause = () => {
+    setIsPaused((prev) => !prev);
+  };
 
+
+  const renderField = () => (
+    // snake-board теперь просто обертка для позиционирования
+    <div className="snake-board">
+      {/* snake-grid теперь будет основным контейнером для ячеек и слоев */}
+      <div className="snake-grid">
+        {[...Array(SIZE * SIZE)].map((_, i) => {
+          const x = i % SIZE;
+          const y = Math.floor(i / SIZE);
+          const isSnake = snake.some(([sx, sy]) => sx === x && sy === y);
+          const isHead = snake[0][0] === x && snake[0][1] === y;
+          const isFood = food[0] === x && food[1] === y;
           return (
-            <div 
-              key={index}
-              className={`cell 
-                ${isHead ? 'head' : ''} 
-                ${isSnake ? 'snake' : ''} 
-                ${isFood ? 'food' : ''}`}
+            <div
+              key={i}
+              className={
+                isHead ? "head" :
+                isSnake ? "snake" :
+                isFood ? "food" : "cell"
+              }
             />
           );
         })}
+        {isPaused && isStarted && !gameOver && (
+          <>
+            <div className="pause-blur" />
+            <div className="pause-label">
+              <span>Пауза</span>
+            </div>
+          </>
+        )}
       </div>
-
-      {gameOver && <div className="game-over">Игра окончена!</div>}
-      
-      <button 
-        className="start-button"
-        onClick={startGame}
-      >
-        {isPlaying ? 'Перезапуск' : 'Начать игру'}
-      </button>
     </div>
   );
-};
 
-export default SnakeGame;
+
+  return (
+    <div style={{ textAlign: "center" }}>
+    {!isStarted && (
+      <button onClick={handleStart} style={{ marginBottom: 10 }}>
+        {gameOver ? "Restart" : "Start"}
+      </button>
+    )}
+    {isStarted && !gameOver && (
+      <button onClick={handlePause} style={{ marginBottom: 10, marginLeft: 10 }}>
+        {isPaused ? "Продолжить" : "Пауза"}
+      </button>
+    )}
+    {gameOver && <div style={{ marginBottom: 10 }}>Game Over!</div>}
+    <p>Управление: A/D или стрелки влево/вправо</p>
+    {renderField()}
+    <div style={{ marginBottom: 10 }}>
+      Счёт: <strong>{score}</strong>
+    </div>
+  </div>
+  );
+}

@@ -1,0 +1,62 @@
+.game-view-container {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  /* Для смещения вправо, используйте margin-left или padding-left на .game-view-container */
+  /* или flexbox justify-content: center; */
+  /*justify-content: center; Центрирует flex-элементы по горизонтали */
+  padding: 20px; /* Добавляет отступ вокруг всего содержимого */
+  margin-left: 200px;
+  margin-top: -40px;
+}
+
+.game-content-wrapper {
+  flex: 1; /* Позволяет этой части занимать доступное пространство */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Центрирует содержимое по горизонтали */
+  /*justify-content: center; Центрирует содержимое по вертикали */
+  min-height: calc(100vh - 250px); /* Убедитесь, что это правильное значение */
+  gap: 0px;
+  /* border: 5px solid red !important; /* Уберите после отладки */
+}
+
+.game-content-wrapper h2 {
+  /* Стили для заголовка игры, если нужны */
+}
+
+.game-content-wrapper p {
+  /* Стили для описания игры, если нужны */
+}
+
+.side-panel {
+  min-width: 220px;
+  background: #222;
+  padding: 24px 18px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  align-self: end; /* Выравнивает панель по низу флекс-контейнера */
+}
+
+.side-panel-button {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 12px; /* Отступ между кнопками */
+}
+
+.side-panel-button.exit-button {
+  background: #4caf50;
+  color: white;
+}
+
+.side-panel-button.save-button {
+  background: #1976d2;
+  color: white;
+}

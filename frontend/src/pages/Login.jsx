@@ -48,7 +48,6 @@ const Login = () => {
         </button>
       </form>
 
-      {/* Новая часть — кнопка регистрации */}
       <div style={{ marginTop: '1rem' }}>
         <p>Впервые здесь?</p>
         <Link to="/register">

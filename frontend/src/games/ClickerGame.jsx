@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import './ClickerGame.css';
 
-const ClickerGame = () => {
+const ClickerGame = ({ onSessionChange }) => {
   const [score, setScore] = useState(0);
   const [upgradeLevel, setUpgradeLevel] = useState(1);
   const [autoClicker, setAutoClicker] = useState(0);
   const [upgradeCost, setUpgradeCost] = useState(10);
   const [autoClickerCost, setAutoClickerCost] = useState(50);
+  const [startTime, setStartTime] = useState(null);
+
+useEffect(() => {
+  // Фиксируем старт игры в формате HH:MM:SS
+  const now = new Date();
+  const pad = (n) => n.toString().padStart(2, '0');
+  const timeString = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  setStartTime(timeString);
+  onSessionChange && onSessionChange({ startTime: timeString, score: 0 });
+}, []);
+
+
 
   // Автокликеры
   useEffect(() => {
@@ -17,7 +29,12 @@ const ClickerGame = () => {
       return () => clearInterval(interval);
     }
   }, [autoClicker]);
-
+  useEffect(() => {
+    // Сообщаем родителю о каждом изменении счета
+    if (startTime) {
+      onSessionChange && onSessionChange({ startTime, score });
+    }
+  }, [score, startTime]);
   const handleClick = () => {
     setScore(prev => prev + upgradeLevel);
   };
@@ -40,7 +57,6 @@ const ClickerGame = () => {
 
   return (
     <div className="clicker-game">
-      <h1>Кликерная Игра</h1>
       <div className="score-board">
         <h2>Очков: {score}</h2>
       </div>

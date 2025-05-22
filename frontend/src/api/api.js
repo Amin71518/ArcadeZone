@@ -17,13 +17,13 @@ return await response.json();
 }
 
 export async function registerPlayer(userData) {
-  const response = await fetch(`${BASE_URL}/players/register/`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ user: userData }),
-  });
+const response = await fetch(`${BASE_URL}/players/register/`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+},
+body: JSON.stringify({ "user": userData }),
+});
 
   let data;
   try {
