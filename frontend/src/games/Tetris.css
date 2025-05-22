@@ -1,0 +1,94 @@
+.tetris-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  color: white;
+  background-color: #121212;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.tetris-game {
+  display: flex;
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.tetris-board {
+  border: 2px solid #333;
+  background-color: #1a1a1a;
+}
+
+.tetris-row {
+  display: flex;
+}
+
+.tetris-cell {
+  width: 30px;
+  height: 30px;
+  box-sizing: border-box;
+}
+
+.tetris-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 200px;
+}
+
+.info-section {
+  background-color: #1a1a1a;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.next-piece {
+  margin-top: 10px;
+  background-color: #1a1a1a;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.next-piece-row {
+  display: flex;
+}
+
+.next-piece-cell {
+  width: 20px;
+  height: 20px;
+  margin: 2px;
+}
+
+.tetris-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.tetris-button:hover {
+  background-color: #45a049;
+}
+
+.game-over-message {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.tetris-controls {
+  margin-top: 30px;
+  background-color: #1a1a1a;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+h2, h3 {
+  margin: 0;
+  padding: 0;
+}
