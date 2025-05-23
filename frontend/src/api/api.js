@@ -199,20 +199,6 @@ if (!response.ok) throw new Error('Ошибка добавления рекор�
 return await response.json();
 }
 
-export async function updateScore(playerId, gameId, newScore, token) {
-const response = await fetch(`${BASE_URL}/records/${playerId}/${gameId}/update/`, {
-method: 'PUT',
-headers: {
-'Content-Type': 'application/json',
-Authorization: `Token ${token}`,
-},
-body: JSON.stringify({ score: newScore }),
-});
-
-if (!response.ok) throw new Error('Ошибка обновления рекорда');
-
-return await response.json();
-}
 
 export async function getPlayerRecord(playerId, gameId, token) {
 const response = await fetch(`${BASE_URL}/records/player/${playerId}/${gameId}/`, {
