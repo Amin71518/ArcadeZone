@@ -18,7 +18,7 @@ class Command(BaseCommand):
         count = expired_tokens.count()
         expired_tokens.delete()
 
-    def update_blacklist(token_str):
+    def update_blacklist(self, token_str):
         """
         Добавляет токен в черный список.
         Если id токена кратен 5, удаляет устаревшие токены.
@@ -34,4 +34,4 @@ class Command(BaseCommand):
         # Проверяем кратность id
         if new_token.id % 5 == 0:
             # Удаляем все токены, срок жизни которых истек
-            call_command('delete_expired_tokens')
+            self.handle_clear()

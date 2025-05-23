@@ -166,5 +166,6 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Token missing in header.')
 
         # Заносим токен в Blacklist
-        Command.update_blacklist(token_str)
+        com = Command()
+        com.update_blacklist(token_str)
 

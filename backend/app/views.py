@@ -13,7 +13,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import RegistrationSerializer, LoginSerializer, UserSerializer
 from arcadezonedb.permissions import IsSuperuser
-
+from .clear_expired_tokens import Command
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from .models import Record
+import jwt
+from django.conf import settings
 
 
 @api_view(['POST'])
@@ -46,6 +51,7 @@ def login_player(request):
             "email": serializer.data["email"],
              "token" : serializer.data["token"]
         }, status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -121,12 +127,6 @@ def get_games(request):
         games = list(Game.objects.values())
         return JsonResponse({"games": games}, safe=False)
 
-
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from .models import Record
-import jwt
-from django.conf import settings
 
 @csrf_exempt
 def get_last_games(request):
@@ -306,35 +306,6 @@ def create_record(request):
                 "score": record.score
             }
         })
-
-
-@csrf_exempt
-@api_view(['PUT'])
-@permission_classes([IsSuperuser])
-def update_score(request, player_id, game_id):
-    """Обновление score по id записи."""
-    if request.method == "PUT":
-        data = json.loads(request.body)
-        new_score = data.get("score")
-        start_time = data.get("start_time")
-        end_time = data.get("end_time")
-
-        if new_score is None:
-            return JsonResponse({"error": "score is required"}, status=400)
-
-        try:
-            record = Record.objects.get(player_id=player_id, game_id=game_id)
-            record.score = new_score
-            record.start_time = start_time
-            record.end_time = end_time
-
-            record.save()
-            return JsonResponse({
-                "message": "Score updated",
-                "new_score": record.score
-            })
-        except Record.DoesNotExist:
-            return JsonResponse({"error": "Record not found"}, status=404)
 
 
 @csrf_exempt
