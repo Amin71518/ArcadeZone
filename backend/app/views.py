@@ -98,7 +98,7 @@ def update_current_user(request):
              "token" : serializer.data["token"]
         }, status=status.HTTP_200_OK)
 
-@csrf_exempt
+
 @api_view(['DELETE'])
 @permission_classes([IsSuperuser])
 def delete_player(request, player_id):
@@ -111,7 +111,7 @@ def delete_player(request, player_id):
             return JsonResponse({"error": "Player not found"}, status=404)
 
 
-@csrf_exempt
+
 @api_view(['GET'])
 @permission_classes([IsSuperuser])
 def get_players(request):
@@ -120,7 +120,9 @@ def get_players(request):
         return JsonResponse({"players": players}, safe=False)
 
 
-@csrf_exempt
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
 def get_games(request):
     #Получить список всех игр
     if request.method == "GET":
@@ -128,7 +130,8 @@ def get_games(request):
         return JsonResponse({"games": games}, safe=False)
 
 
-@csrf_exempt
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_last_games(request):
     # Получить последние 3 игры пользователя на основе JWT
     if request.method == "GET":
@@ -171,7 +174,7 @@ def get_last_games(request):
             return JsonResponse({"error": "Invalid token"}, status=401)
 
 
-@csrf_exempt
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_game(request, game_id):
@@ -190,7 +193,7 @@ def get_game(request, game_id):
             return JsonResponse({"error": "Game not found"}, status=404)
 
 
-@csrf_exempt
+
 @api_view(['POST'])
 @permission_classes([IsSuperuser])
 def add_game(request):
@@ -204,7 +207,7 @@ def add_game(request):
             genre = data["genre"]
             picture_url = data["pictures"]
         except KeyError:
-            return JsonResponse({"error": "Missing required fields"}, status=400)
+            return JsonResponse({"error": "Missing required fields", "data":data}, status=400)
 
         game = Game.objects.create(
             id=id,
@@ -225,7 +228,7 @@ def add_game(request):
         })
 
 
-@csrf_exempt
+
 @api_view(['DELETE'])
 @permission_classes([IsSuperuser])
 def delete_game(request, game_id):
@@ -239,7 +242,7 @@ def delete_game(request, game_id):
             return JsonResponse({"error": "Game not found"}, status=404)
 
 
-@csrf_exempt
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_record(request):
@@ -308,7 +311,7 @@ def create_record(request):
         })
 
 
-@csrf_exempt
+
 @api_view(['GET'])
 @permission_classes([IsSuperuser])
 def get_player_record(request, player_id, game_id):
@@ -324,8 +327,9 @@ def get_player_record(request, player_id, game_id):
         })
 
 
-@csrf_exempt
+
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def get_top_10_records(request, game_id):
     """Топ 10 игроков по рекордам."""
     if request.method == "GET":
@@ -344,7 +348,7 @@ def get_top_10_records(request, game_id):
         })
 
 
-@csrf_exempt
+
 @api_view(['DELETE'])
 @permission_classes([IsSuperuser])
 def delete_record(request, player_id, game_id):
@@ -356,3 +360,75 @@ def delete_record(request, player_id, game_id):
             return JsonResponse({"message": "Record deleted"})
         except Record.DoesNotExist:
             return JsonResponse({"error": "Record not found"}, status=404)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def check_adm(request):
+    serializer_data = request.data.get('user', {})
+    email = serializer_data.get("email")
+    password = serializer_data.get("password")
+    
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({'detail': 'Пользователь не найден'}, status=status.HTTP_403_FORBIDDEN)
+
+    # Проверка пароля
+    if not user.check_password(password):
+        user_data = {
+            'email': user.email,
+        }
+        return Response(user_data, status=status.HTTP_403_FORBIDDEN)
+
+    # Проверка прав
+    if not user.is_superuser:
+        user.is_staff = True
+        user_data = {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+        }
+        user.save()
+        return Response(user_data, status=status.HTTP_403_FORBIDDEN)
+
+    # Всё ок — возвращаем 200 OK
+
+    return Response({'valid': True}, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsSuperuser])
+def get_players_staff(request):
+    # Получаем всех пользователей, у которых is_superuser == False
+    players = User.objects.filter(is_staff=True, is_superuser=False)
+    # Формируем список словарей с нужными полями
+    players_data = [
+        {
+            'id': player.id,
+            'username': player.username,
+            'email': player.email,
+            'is_staff': player.is_staff,
+            'is_superuser': player.is_superuser
+        }
+        for player in players
+    ]
+
+    return Response(players_data, status=status.HTTP_200_OK)
+
+@api_view(['PUT'])
+@permission_classes([IsSuperuser])
+def makestaff(request, player_id):
+    approve = request.data.get('approve')
+    try:
+        user = User.objects.get(id=player_id)
+    except User.DoesNotExist:
+        return Response({'detail': 'Пользователь не найден'}, status=404)
+
+    if approve:
+        user.is_superuser = True
+        user.is_staff = True
+    else:
+        user.is_staff = False
+        user.is_superuser = False
+    user.save()
+    return Response({'success': True})
