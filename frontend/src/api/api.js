@@ -108,8 +108,9 @@ if (!response.ok) throw new Error('Ошибка получения игроко�
 return await response.json();
 }
 
-export async function deletePlayer(token) {
-const response = await fetch(`${BASE_URL}/players/delete/`, {
+export async function deletePlayer(playerId, token) {
+console.log(playerId);
+const response = await fetch(`${BASE_URL}/players/${playerId}/delete/`, {
 method: 'DELETE',
 headers: {
 Authorization: `Token ${token}`,
@@ -126,8 +127,7 @@ headers: {
 Authorization: `Token ${token}`,
 },
 });
-
-if (!response.ok) throw new Error('Ошибка получения игр');
+if (!response.ok) throw new Error('Ошибка получения последних игр');
 
 return await response.json();
 }
@@ -220,7 +220,7 @@ return await response.json();
 }
 
 export async function deleteRecord(playerId, gameId, token) {
-const response = await fetch(`${BASE_URL}/records/${playerId}/${gameId}/delete/`, {
+const response = await fetch(`${BASE_URL}/records/player/${playerId}/game/${gameId}/delete/`, {
 method: 'DELETE',
 headers: {
 Authorization: `Token ${token}`,
@@ -230,3 +230,43 @@ Authorization: `Token ${token}`,
 if (!response.ok) throw new Error('Ошибка удаления рекорда');
 }
 
+export async function new_check_adm(token, email, password) {
+  const response = await fetch(`${BASE_URL}/admpanel/check-adm/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Token ${token}`,
+    },
+    body: JSON.stringify({ user: { email, password } }),
+  });
+  if (response.status === 200) {
+    return { valid: true };
+  }
+  const data = await response.json();
+  return data;
+}
+
+
+export async function getStaff(token) {
+console.log(token);
+const response = await fetch(`${BASE_URL}/admpanel/players/`, {
+headers: {
+Authorization: `Token ${token}`,
+},
+});
+if (!response.ok) throw new Error('Ошибка загрузки игроков');
+return await response.json();
+}
+
+export async function makeStaff(playerId, token, approve) {
+  const response = await fetch(`${BASE_URL}/admpanel/player/${playerId}/`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Token ${token}`,
+    },
+    body: JSON.stringify({ approve }),
+  });
+  if (!response.ok) throw new Error('Ошибка изменения статуса');
+  return await response.json();
+} 

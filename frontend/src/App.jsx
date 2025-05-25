@@ -17,6 +17,8 @@ import Tetris from './games/TetrisGame';
 import AddGameForm from './pages/AddGameForm';
 import Navbar from './components/Navbar';
 import GameView from './pages/GameView';
+import AdminAccessForm from './pages/AdminAccessForm';
+import AdmPanel from './pages/AdmPanel';
 
 
 function App() {
@@ -34,8 +36,10 @@ return (
 <Route path="/clicker" element={<ClickerGame />} />
 <Route path="/snake" element={<SnakeGame />} />
 <Route path="/tetris" element={<Tetris />} />
-<Route path="/add" element={<AddGameForm/>}/>
+<Route path="/add-game" element={<AddGameForm/>}/>
 <Route path="/games/:gameId" element={<GameView />} />
+<Route path="/admin-access-form" element={<AdminAccessForm />} />
+<Route path="/admin-panel" element={<AdmPanel />} />
 </Routes>
 </BrowserRouter>
 </AuthProvider>

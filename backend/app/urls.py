@@ -2,7 +2,7 @@ from django.urls import path, re_path, include
 from app.views import (
     add_game,  create_record, delete_game, delete_player, delete_record, get_game, 
     get_games, get_player_record, get_top_10_records, register_player, get_players, get_player, update_current_user,
-     login_player, logout_player, get_last_games
+     login_player, logout_player, get_last_games, check_adm, makestaff, get_players_staff
 )
 
 urlpatterns = [
@@ -24,4 +24,7 @@ urlpatterns = [
     path("records/player/<int:player_id>/game/<int:game_id>/", get_player_record, name="get_player_record"),
     path("records/top/game/<int:game_id>/", get_top_10_records, name="get_top_10_records"),
     path("records/player/<int:player_id>/game/<int:game_id>/delete/", delete_record, name="delete_record"),
+    path('admpanel/check-adm/', check_adm, name='check_password'),
+    path('admpanel/players/', get_players_staff, name='get_players_staff'),
+    path('admpanel/player/<int:player_id>/', makestaff, name='makestaff')
 ]
