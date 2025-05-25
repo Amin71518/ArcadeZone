@@ -30,9 +30,9 @@ def register_player(request):
     if serializer.is_valid():
         serializer.save()
         return Response({
-            "username":  serializer.data["username"],
+            "username": serializer.data["username"],
             "email": serializer.data["email"],
-             "token" : serializer.data["token"]
+            "token": serializer.data["token"]
         }, status=status.HTTP_201_CREATED)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -47,16 +47,16 @@ def login_player(request):
     serializer.is_valid(raise_exception=True)
 
     return Response({
-            "username":  serializer.data["username"],
-            "email": serializer.data["email"],
-             "token" : serializer.data["token"]
-        }, status=status.HTTP_200_OK)
+        "username": serializer.data["username"],
+        "email": serializer.data["email"],
+        "token": serializer.data["token"]
+    }, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_player(request):
-    #Выход из аккаунта. Добавляем токен в чёрный список.
+    # Выход из аккаунта. Добавляем токен в чёрный список.
 
     serializer = UserSerializer(
         request.user,
@@ -70,19 +70,20 @@ def logout_player(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_player(request):
-    #Получение данных текущего авторизованного пользователя.
+    # Получение данных текущего авторизованного пользователя.
 
     serializer = UserSerializer(request.user)
     return Response({
-            "username":  serializer.data["username"],
-            "email": serializer.data["email"],
-             "token" : serializer.data["token"]
-        }, status=status.HTTP_200_OK)
+        "username": serializer.data["username"],
+        "email": serializer.data["email"],
+        "token": serializer.data["token"]
+    }, status=status.HTTP_200_OK)
+
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_current_user(request):
-    #Обновление данных текущего авторизованного пользователя.
+    # Обновление данных текущего авторизованного пользователя.
 
     serializer_data = request.data.get('user', {})
 
@@ -93,10 +94,11 @@ def update_current_user(request):
     serializer.save()
 
     return Response({
-            "username":  serializer.data["username"],
-            "email": serializer.data["email"],
-             "token" : serializer.data["token"]
-        }, status=status.HTTP_200_OK)
+        "username": serializer.data["username"],
+        "email": serializer.data["email"],
+        "token": serializer.data["token"]
+    }, status=status.HTTP_200_OK)
+
 
 @csrf_exempt
 @api_view(['DELETE'])
@@ -122,7 +124,7 @@ def get_players(request):
 
 @csrf_exempt
 def get_games(request):
-    #Получить список всех игр
+    # Получить список всех игр
     if request.method == "GET":
         games = list(Game.objects.values())
         return JsonResponse({"games": games}, safe=False)
@@ -175,7 +177,7 @@ def get_last_games(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_game(request, game_id):
-    #Получить информацию об одной игре
+    # Получить информацию об одной игре
     if request.method == "GET":
         try:
             game = Game.objects.get(id=game_id)
@@ -194,7 +196,7 @@ def get_game(request, game_id):
 @api_view(['POST'])
 @permission_classes([IsSuperuser])
 def add_game(request):
-    """Добавить новую игру."""
+    # Добавить новую игру
     if request.method == "POST":
         data = json.loads(request.body)
         try:
@@ -229,7 +231,7 @@ def add_game(request):
 @api_view(['DELETE'])
 @permission_classes([IsSuperuser])
 def delete_game(request, game_id):
-    #Удалить игру
+    # Удалить игру
     if request.method == "DELETE":
         try:
             game = Game.objects.get(id=game_id)
@@ -243,13 +245,14 @@ def delete_game(request, game_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_record(request):
-    #Создание нового рекорда игрока. Если рекорд уже есть — обновляется только если новый лучше."""
+    logger = logging.getLogger(__name__)
+    # Создание нового рекорда игрока. Если рекорд уже есть — обновляется только если новый лучше
     if request.method == "POST":
         data = json.loads(request.body)
         try:
             player_id = data["player_id"]
             game_id = data["game_id"]
-            start_time = data["start_time"]  # строка формата ISO (например, "2025-04-04T18:30:00Z")
+            start_time = data["start_time"]
             end_time = data["end_time"]
             score = data["score"]
         except KeyError:
@@ -320,7 +323,7 @@ def get_player_record(request, player_id, game_id):
 
         return JsonResponse({
             "player_id": player_id,
-            "records": list(records.values("id", "game_id", "start_time", "end_time", "score")) #добавил три параметра
+            "records": list(records.values("id", "game_id", "start_time", "end_time", "score"))  # добавил три параметра
         })
 
 
@@ -329,11 +332,12 @@ def get_player_record(request, player_id, game_id):
 def get_top_10_records(request, game_id):
     """Топ 10 игроков по рекордам."""
     if request.method == "GET":
-        top_records = Record.objects.filter(game_id=game_id).order_by("-score")[:10] #сюда добавил в вывод
+        top_records = Record.objects.filter(game_id=game_id).order_by("-score")[:10]
         return JsonResponse({
             "top_10": [
                 {
                     "record_id": rec.id,
+                    "player_name": rec.player.username,
                     "player_id": rec.player.id,
                     "game_id": rec.game_id,
                     "score": rec.score,

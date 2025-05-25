@@ -4,7 +4,6 @@ from django.core.management.base import BaseCommand
 from django.utils.timezone import now
 from django.utils import timezone
 from datetime import timezone as dt_timezone
-
 import jwt
 from .models import BlackListedToken
 from django.core.management import call_command
@@ -30,6 +29,7 @@ class Command(BaseCommand):
             expires_at=datetime.datetime.fromtimestamp(payload['exp'])
 
         )
+
 
         # Проверяем кратность id
         if new_token.id % 5 == 0:

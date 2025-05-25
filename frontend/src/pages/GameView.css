@@ -21,14 +21,6 @@
   /* border: 5px solid red !important; /* Уберите после отладки */
 }
 
-.game-content-wrapper h2 {
-  /* Стили для заголовка игры, если нужны */
-}
-
-.game-content-wrapper p {
-  /* Стили для описания игры, если нужны */
-}
-
 .side-panel {
   min-width: 220px;
   background: #222;
@@ -39,6 +31,11 @@
   flex-direction: column;
   align-items: stretch;
   align-self: end; /* Выравнивает панель по низу флекс-контейнера */
+}
+
+.upcoming-game-message {
+  font-weight: bold;
+  font-size: 1.2rem;
 }
 
 .side-panel-button {

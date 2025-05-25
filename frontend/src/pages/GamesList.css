@@ -1,11 +1,13 @@
 .games-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  display: flex;
   gap: 2rem;
-  padding: 2rem;
+  padding: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .game-card {
+  flex: 0 0 280px;
   background: #fff;
   border-radius: 12px;
   overflow: hidden;
@@ -42,23 +44,6 @@
   font-size: 1.3rem;
 }
 
-.game-description {
-  margin: 0 0 1rem;
-  color: #666;
-  font-size: 0.95rem;
-  line-height: 1.4;
-  min-height: 60px;
-}
-
-.game-rating {
-  background: #f8f9fa;
-  padding: 0.3rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  color: #3498db;
-  display: inline-block;
-}
-
 .no-games {
   text-align: center;
   padding: 4rem;
@@ -76,4 +61,55 @@
   text-align: center;
   padding: 2rem;
   color: #e74c3c;
+}
+
+/* Контекстное меню */
+
+.custom-context-menu {
+  position: fixed; /* fixed для позиционирования относительно окна */
+  background-color: #f9f9f9; /* светлый фон */
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 10px 12px;
+  min-width: 220px;
+  z-index: 10000;
+  color: #333; /* тёмный цвет текста */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.custom-context-menu button {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  background-color: #3498db;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.custom-context-menu button:hover {
+  background-color: #2980b9;
+}
+
+.records-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 200px; /* ограничение по высоте с прокруткой */
+  overflow-y: auto;
+}
+
+.records-list li {
+  padding: 6px 8px;
+  border-bottom: 1px solid #ddd;
+  font-size: 0.95rem;
+  color: #2c3e50;
+}
+
+.records-list li:last-child {
+  border-bottom: none;
 }

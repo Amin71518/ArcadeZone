@@ -120,10 +120,10 @@ TIME_ZONE = 'Europe/Samara'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 CORS_ALLOWED_ORIGINS = [
-"http://localhost:5173",
+    "http://localhost:5173",
 ]
 
 

@@ -1,15 +1,22 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import gsap from 'gsap';
 import './Navbar.css';
+import { AuthContext } from '../context/AuthContext'
 
-const links = [
-{ label: 'Игры', path: '/games' },
-{ label: 'Аккаунт', path: '/account' },
-{ label: 'Вход', path: '/login' },
-];
 
 const Navbar = () => {
+
+const { token } = useContext(AuthContext);
+
+const baseLinks = [
+  { label: 'Игры', path: '/games' }
+];
+
+const links = token
+  ? [...baseLinks, { label: 'Аккаунт', path: '/account' }]
+  : [...baseLinks, { label: 'Вход', path: '/login' }];
+
 const location = useLocation();
 const underlineRef = useRef(null);
 const linkRefs = useRef([]);

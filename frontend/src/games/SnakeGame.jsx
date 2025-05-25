@@ -15,7 +15,10 @@ const dirs = [
 
 const keyToTurn = {
   a: -1, ArrowLeft: -1,
+  ф: -1, ArrowLeft: -1,
+
   d: 1, ArrowRight: 1,
+  в: 1, ArrowRight: 1,
 };
 
 function areOpposite(dir1, dir2) {

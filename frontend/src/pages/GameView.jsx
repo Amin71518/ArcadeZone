@@ -82,7 +82,9 @@ const GameView = () => {
           {GameComponent ? (
             <GameComponent onSessionChange={setSession} />
           ) : (
-            <p>Компонент игры с кодом "{game.code}" не найден.</p>
+            <p className="upcoming-game-message">
+                Игра {game.name} скоро будет добавлена. Следите за обновлениями!
+            </p>
           )}
         </div>
       </div>

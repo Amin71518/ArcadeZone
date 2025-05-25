@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from django.conf import settings
 from django.contrib.auth.models import (
     AbstractBaseUser, BaseUserManager, PermissionsMixin
@@ -148,6 +148,7 @@ class Record(models.Model):
 
     def save(self, *args, **kwargs):
         if self.end_time is None:
+            now = timezone.localtime(timezone.now()).time()
             # Получаем текущее локальное время (по часовому поясу Django проекта)
-            self.end_time = timezone.localtime(timezone.now()).time()
+            self.end_time = time(hour=now.hour, minute=now.minute, second=now.second)
         super().save(*args, **kwargs)

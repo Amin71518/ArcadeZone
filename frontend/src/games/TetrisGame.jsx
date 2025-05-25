@@ -148,10 +148,10 @@ export default function Tetris({ onSessionChange }) {
     const handleKey = (e) => {
       if (!isStarted || gameOver || !currentPiece || isPaused) return;
       const key = e.key.toLowerCase();
-      if (key === 'a') move(-1);
-      if (key === 'd') move(1);
-      if (key === 's') drop();
-      if (key === 'w') rotatePiece();
+      if (key === 'a' || key === 'ф') move(-1);
+      if (key === 'd' || key === 'в') move(1);
+      if (key === 's' || key === 'ы') drop();
+      if (key === 'w' || key === 'ц') rotatePiece();
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);

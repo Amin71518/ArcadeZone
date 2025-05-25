@@ -96,7 +96,6 @@ if (!response.ok) throw new Error('Ошибка выхода');
 return await response.json();
 }
 
-// Игроки
 export async function getPlayers(token) {
 const response = await fetch(`${BASE_URL}/players/`, {
 headers: {
@@ -213,11 +212,7 @@ return await response.json();
 }
 
 export async function getTop10Records(gameId, token) {
-const response = await fetch(`${BASE_URL}/records/top/${gameId}/`, {
-headers: {
-Authorization: `Token ${token}`,
-},
-});
+const response = await fetch(`${BASE_URL}/records/top/game/${gameId}/`);
 
 if (!response.ok) throw new Error('Ошибка получения топа рекордов');
 
