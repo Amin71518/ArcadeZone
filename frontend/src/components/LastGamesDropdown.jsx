@@ -31,7 +31,7 @@ const LastGamesDropdown = () => {
   };
 
   return (
-    <div className="last-games-dropdown" style={{ position: 'relative', display: 'column', marginTop: '1em' }}>
+    <div className="last-games-dropdown" style={{ position: 'relative', display: 'column' }}>
       <button
         onClick={toggleDropdown}
         style={{
