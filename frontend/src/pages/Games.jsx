@@ -13,9 +13,6 @@ const Games = () => {
       try {
         const response = await getGames();
         
-        // Дебаггинг: выведем полученные данные в консоль
-        console.log('API Response:', response);
-        
         // Варианты обработки разных структур ответа
         const gamesData = response.data?.games || 
                          response.games || 

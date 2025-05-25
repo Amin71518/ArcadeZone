@@ -120,14 +120,13 @@ def get_players(request):
         return JsonResponse({"players": players}, safe=False)
 
 
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
+@csrf_exempt
 def get_games(request):
-    #Получить список всех игр
+    # Получить список всех игр
     if request.method == "GET":
         games = list(Game.objects.values())
         return JsonResponse({"games": games}, safe=False)
+
 
 
 @api_view(['GET'])

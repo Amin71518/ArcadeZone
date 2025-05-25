@@ -128,8 +128,7 @@ headers: {
 Authorization: `Token ${token}`,
 },
 });
-
-if (!response.ok) throw new Error('Ошибка получения игр');
+if (!response.ok) throw new Error('Ошибка получения последних игр');
 
 return await response.json();
 }
