@@ -108,16 +108,19 @@ if (!response.ok) throw new Error('Ошибка получения игроко�
 return await response.json();
 }
 
-export async function deletePlayer(playerId, token) {
-console.log(playerId);
-const response = await fetch(`${BASE_URL}/players/${playerId}/delete/`, {
-method: 'DELETE',
-headers: {
-Authorization: `Token ${token}`,
-},
-});
+export async function deletePlayer(playerId, token, confirm = false) {
+  const response = await fetch(`${BASE_URL}/players/${playerId}/delete/?confirm=${confirm}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Token ${token}` },
+  });
 
-if (!response.ok) throw new Error('Ошибка удаления игрока');
+  if (!response.ok) {
+    const data = await response.json();
+    if (response.status === 409 && data.requires_confirmation) {
+      throw new Error('confirm_required');
+    }
+    throw new Error(data.error || 'Ошибка удаления игрока');
+  }
 }
 
 // Игры
@@ -171,15 +174,19 @@ if (!response.ok) throw new Error('Ошибка добавления игры');
 return await response.json();
 }
 
-export async function deleteGame(gameId, token) {
-const response = await fetch(`${BASE_URL}/games/${gameId}/delete/`, {
-method: 'DELETE',
-headers: {
-Authorization: `Token ${token}`,
-},
-});
+export async function deleteGame(gameId, token, confirm = false) {
+  const response = await fetch(`${BASE_URL}/games/${gameId}/delete/?confirm=${confirm}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Token ${token}` },
+  });
 
-if (!response.ok) throw new Error('Ошибка удаления игры');
+  if (!response.ok) {
+    const data = await response.json();
+    if (response.status === 409 && data.requires_confirmation) {
+      throw new Error('confirm_required');
+    }
+    throw new Error(data.error || 'Ошибка удаления игры');
+  }
 }
 
 // Рекорды
