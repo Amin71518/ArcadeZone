@@ -8,7 +8,7 @@ import AddGameForm from './AddGameForm';
 
 const AdmPanel = () => {
   const { token } = useContext(AuthContext);
-
+  const navigate = useNavigate();
   const [showAddGameForm, setShowAddGameForm] = useState(false);
 
   const [players, setPlayers] = useState([]);

@@ -124,11 +124,8 @@ export async function deletePlayer(playerId, token, confirm = false) {
 }
 
 // Игры
-export async function getGames(token) {
+export async function getGames() {
 const response = await fetch(`${BASE_URL}/games/`, {
-headers: {
-Authorization: `Token ${token}`,
-},
 });
 if (!response.ok) throw new Error('Ошибка получения последних игр');
 

@@ -100,7 +100,7 @@ def update_current_user(request):
     }, status=status.HTTP_200_OK)
 
 
-@csrf_exempt
+
 @api_view(['DELETE'])
 @permission_classes([IsSuperuser])
 def delete_player(request, player_id):
@@ -123,7 +123,7 @@ def delete_player(request, player_id):
     return JsonResponse({"message": "Player deleted successfully"})
 
 
-@csrf_exempt
+
 @api_view(['GET'])
 @permission_classes([IsSuperuser])
 def get_players(request):
@@ -141,7 +141,8 @@ def get_players(request):
         return JsonResponse({"players": players}, safe=False)
 
 
-@csrf_exempt
+@api_view(['GET'])
+@permission_classes([AllowAny])
 def get_games(request):
     # Получить список всех игр
     if request.method == "GET":
@@ -149,7 +150,7 @@ def get_games(request):
         return JsonResponse({"games": games}, safe=False)
 
 
-@csrf_exempt
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_last_games(request):
     # Получить последние 3 игры пользователя на основе JWT
@@ -193,7 +194,7 @@ def get_last_games(request):
             return JsonResponse({"error": "Invalid token"}, status=401)
 
 
-@csrf_exempt
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_game(request, game_id):
@@ -212,7 +213,7 @@ def get_game(request, game_id):
             return JsonResponse({"error": "Game not found"}, status=404)
 
 
-@csrf_exempt
+
 @api_view(['POST'])
 @permission_classes([IsSuperuser])
 def add_game(request):
@@ -247,7 +248,7 @@ def add_game(request):
         })
 
 
-@csrf_exempt
+
 @api_view(['DELETE'])
 @permission_classes([IsSuperuser])
 def delete_game(request, game_id):
@@ -272,7 +273,7 @@ def delete_game(request, game_id):
     return JsonResponse({"message": "Игра успешно удалена"})
 
 
-@csrf_exempt
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_record(request):
@@ -342,7 +343,7 @@ def create_record(request):
         })
 
 
-@csrf_exempt
+
 @api_view(['GET'])
 @permission_classes([IsSuperuser])
 def get_player_records(request, player_id):
@@ -374,7 +375,7 @@ def get_player_records(request, player_id):
         })
 
 
-@csrf_exempt
+
 @api_view(['GET'])
 def get_top_10_records(request, game_id):
     """Топ 10 игроков по рекордам."""
@@ -395,7 +396,7 @@ def get_top_10_records(request, game_id):
         })
 
 
-@csrf_exempt
+
 @api_view(['DELETE'])
 @permission_classes([IsSuperuser])
 def delete_record(request, player_id, game_id):

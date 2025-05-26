@@ -109,7 +109,12 @@ const Account = () => {
       <LastGamesDropdown />
       {user && (
         <div style={{ position: 'relative', display: 'inline-block' }}>
-          <button onClick={() => setShowAdminForm((prev) => !prev)}>
+          <button onClick={() => 
+          {
+           setMessage(null); // сбрасываем сообщение
+           setShowAdminForm((prev) => !prev);
+          }}
+            >
             {showAdminForm ? 'Скрыть админ-доступ' : 'Панель администратора'}
           </button>
           {showAdminForm && (
