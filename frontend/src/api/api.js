@@ -179,6 +179,8 @@ Authorization: `Token ${token}`,
 },
 });
 
+const data = await response.json();
+
 if (!response.ok) throw new Error('Ошибка удаления игры');
 }
 
@@ -198,17 +200,17 @@ if (!response.ok) throw new Error('Ошибка добавления рекор�
 return await response.json();
 }
 
-
-export async function getPlayerRecord(playerId, gameId, token) {
-const response = await fetch(`${BASE_URL}/records/player/${playerId}/${gameId}/`, {
+export async function getPlayerRecords(playerId, token) {
+const response = await fetch(`${BASE_URL}/records/player/${playerId}`, {
 headers: {
 Authorization: `Token ${token}`,
 },
 });
 
-if (!response.ok) throw new Error('Ошибка получения рекорда игрока');
+const data = await response.json();
+if (!response.ok) throw new Error(data.error || "Unknown error");
 
-return await response.json();
+return data;
 }
 
 export async function getTop10Records(gameId, token) {
@@ -230,6 +232,7 @@ Authorization: `Token ${token}`,
 if (!response.ok) throw new Error('Ошибка удаления рекорда');
 }
 
+// Админские команды
 export async function new_check_adm(token, email, password) {
   const response = await fetch(`${BASE_URL}/admpanel/check-adm/`, {
     method: 'POST',
@@ -246,15 +249,23 @@ export async function new_check_adm(token, email, password) {
   return data;
 }
 
-
 export async function getStaff(token) {
-console.log(token);
 const response = await fetch(`${BASE_URL}/admpanel/players/`, {
 headers: {
 Authorization: `Token ${token}`,
 },
 });
 if (!response.ok) throw new Error('Ошибка загрузки игроков');
+return await response.json();
+}
+
+export async function admin_get_player(player_id, token) {
+const response = await fetch(`${BASE_URL}/admpanel/get_player/${player_id}/`, {
+headers: {
+Authorization: `Token ${token}`,
+},
+});
+if (!response.ok) throw new Error('Игрок с таким ID не найден');
 return await response.json();
 }
 

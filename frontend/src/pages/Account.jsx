@@ -71,24 +71,22 @@ const Account = () => {
           />
         </div>
         <div style={{ marginBottom: 8 }}>
-          <label style={{ display: 'block', marginBottom: 2, marginLeft: 0, textAlign: 'left' }}>Email:</label>
+          <label style={{ display: 'block', marginBottom: 2, marginLeft: 0, textAlign: 'left' }}>Новый email:</label>
           <input
             type="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
-            required
             style={{ background: 'transparent', border: '1px solid #bbb', marginBottom: 0, width: '100%' }}
           />
         </div>
         <div style={{ marginBottom: 8 }}>
-          <label style={{ display: 'block', marginBottom: 2, marginLeft: 0, textAlign: 'left' }}>Имя пользователя:</label>
+          <label style={{ display: 'block', marginBottom: 2, marginLeft: 0, textAlign: 'left' }}>Новое имя пользователя:</label>
           <input
             type="text"
             name="username"
             value={formData.username}
             onChange={handleChange}
-            required
             style={{ background: 'transparent', border: '1px solid #bbb', marginBottom: 0, width: '100%' }}
           />
         </div>
@@ -99,7 +97,6 @@ const Account = () => {
             name="password"
             value={formData.password}
             onChange={handleChange}
-            required
             style={{ background: 'transparent', border: '1px solid #bbb', marginBottom: 0, width: '100%' }}
           />
         </div>

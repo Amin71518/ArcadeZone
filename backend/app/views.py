@@ -118,7 +118,16 @@ def delete_player(request, player_id):
 @permission_classes([IsSuperuser])
 def get_players(request):
     if request.method == "GET":
-        players = list(User.objects.values("email", "username", "id"))
+        players = list(
+            User.objects
+            .order_by('id')
+            .values("email",
+                    "username",
+                    "id",
+                    "last_login",
+                    "created_at",
+                    "updated_at",
+                    "is_superuser"))
         return JsonResponse({"players": players}, safe=False)
 
 
@@ -128,7 +137,6 @@ def get_games(request):
     if request.method == "GET":
         games = list(Game.objects.values())
         return JsonResponse({"games": games}, safe=False)
-
 
 
 @csrf_exempt
@@ -208,7 +216,7 @@ def add_game(request):
             genre = data["genre"]
             picture_url = data["pictures"]
         except KeyError:
-            return JsonResponse({"error": "Missing required fields", "data":data}, status=400)
+            return JsonResponse({"error": "Missing required fields", "data": data}, status=400)
 
         game = Game.objects.create(
             id=id,
@@ -316,16 +324,32 @@ def create_record(request):
 @csrf_exempt
 @api_view(['GET'])
 @permission_classes([IsSuperuser])
-def get_player_record(request, player_id, game_id):
+def get_player_records(request, player_id):
     """Вывод рекордов игрока."""
     if request.method == "GET":
-        records = Record.objects.filter(player_id=player_id, game_id=game_id).order_by("-score")
-        if not records:
+        records = (Record.objects
+        .filter(player_id=player_id)
+        .order_by("-id")
+        .values(
+            "player__username",
+            "game__name",
+            "start_time",
+            "end_time",
+            "score"
+        ))
+
+        print("Records queryset values:", list(records))
+        print(repr(player_id), type(player_id))
+
+        if not User.objects.filter(id=player_id).exists():
+            return JsonResponse({"error": "A player with such an ID does not exist."}, status=404)
+
+        elif not records:
             return JsonResponse({"error": "No records found for this player"}, status=404)
 
         return JsonResponse({
             "player_id": player_id,
-            "records": list(records.values("id", "game_id", "start_time", "end_time", "score"))  # добавил три параметра
+            "records": list(records)
         })
 
 
@@ -370,7 +394,7 @@ def check_adm(request):
     serializer_data = request.data.get('user', {})
     email = serializer_data.get("email")
     password = serializer_data.get("password")
-    
+
     try:
         user = User.objects.get(email=email)
     except User.DoesNotExist:
@@ -398,6 +422,7 @@ def check_adm(request):
 
     return Response({'valid': True}, status=status.HTTP_200_OK)
 
+
 @api_view(['GET'])
 @permission_classes([IsSuperuser])
 def get_players_staff(request):
@@ -417,6 +442,7 @@ def get_players_staff(request):
 
     return Response(players_data, status=status.HTTP_200_OK)
 
+
 @api_view(['PUT'])
 @permission_classes([IsSuperuser])
 def makestaff(request, player_id):
@@ -434,3 +460,22 @@ def makestaff(request, player_id):
         user.is_superuser = False
     user.save()
     return Response({'success': True})
+
+
+@api_view(['GET'])
+@permission_classes([IsSuperuser])
+def admin_get_player(request, player_id):
+    try:
+        player = User.objects.get(id=player_id)
+        player_data = {
+            "id": player.id,
+            "username": player.username,
+            "email": player.email,
+            "is_admin": player.is_superuser,
+            "last_login": player.last_login,
+            "created_at": player.created_at,
+            "updated_at": player.updated_at
+        }
+    except User.DoesNotExist:
+        return JsonResponse({"error": "Игрок с таким ID не найден"}, status=404)
+    return Response(player_data, status=status.HTTP_200_OK)

@@ -2,6 +2,7 @@ from django.utils import timezone
 from datetime import timezone as dt_timezone
 from django.conf import settings
 import jwt
+from django.utils.timezone import now
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from .models import User, BlackListedToken
@@ -29,9 +30,10 @@ class RegistrationSerializer(serializers.ModelSerializer):
         fields = ['email', 'username', 'password', 'token']
 
     def create(self, validated_data):
-        # Использовать метод create_user, который мы
-        # написали ранее, для создания нового пользователя.
-        return User.objects.create_user(**validated_data)
+        user = User.objects.create_user(**validated_data)
+        user.last_login = now()
+        user.save(update_fields=['last_login'])
+        return user
 
 
 class LoginSerializer(serializers.Serializer):
@@ -81,6 +83,9 @@ class LoginSerializer(serializers.Serializer):
                 'Этот пользователь деактивирован'
             )
 
+        user.last_login = now()
+        user.save(update_fields=['last_login'])
+
         # Метод validate должен возвращать словарь проверенных данных. Это
         # данные, которые передаются в т.ч. в методы create и update.
         return {
@@ -96,11 +101,14 @@ class UserSerializer(serializers.ModelSerializer):
     # Пароль должен содержать от 8 до 128 символов. Это стандартное правило. Мы
     # могли бы переопределить это по-своему, но это создаст лишнюю работу для
     # нас, не добавляя реальных преимуществ, потому оставим все как есть.
+    email = serializers.EmailField(required=False, allow_blank=True)
+    username = serializers.CharField(required=False, allow_blank=True)
     password = serializers.CharField(
         max_length=128,
         min_length=8,
         write_only=True,
-        required=False  # необязательное поле при обновлении
+        required=False,
+        allow_blank=True
     )
     current_password = serializers.CharField(
         write_only=True,
@@ -109,7 +117,16 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'username', 'password', 'current_password', 'token',)
+        fields = ('email',
+                  'username',
+                  'password',
+                  'current_password',
+                  'token',
+                  'created_at',
+                  'updated_at',
+                  'is_staff',
+                  'is_superuser',
+                  )
         read_only_fields = ('token',)
 
     def validate_current_password(self, value):
@@ -124,20 +141,21 @@ class UserSerializer(serializers.ModelSerializer):
         validated_data.pop('current_password', None)  # Проверка старого пароля
         password = validated_data.pop('password', None)  # Новый пароль (если имеется)
 
+        email = validated_data.get('email')
+        if email == '':
+            validated_data.pop('email')
+
+        username = validated_data.get('username')
+        if username == '':
+            validated_data.pop('username')
+
         for key, value in validated_data.items():
-            # Для ключей, оставшихся в validated_data мы устанавливаем значения
-            # в текущий экземпляр User по одному.
             setattr(instance, key, value)
 
-        if password is not None:
-            # 'set_password()' решает все вопросы, связанные с безопасностью
-            # при обновлении пароля, потому нам не нужно беспокоиться об этом.
+        if password is not None and password != '':
             instance.set_password(password)
 
-        # После того как все было обновлено, мы должны сохранить наш экземпляр
-        # User. Стоит отметить, что set_password() не сохраняет модель.
         instance.save()
-
         return instance
 
     def logout(self):
