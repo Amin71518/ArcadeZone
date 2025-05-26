@@ -104,13 +104,23 @@ def update_current_user(request):
 @api_view(['DELETE'])
 @permission_classes([IsSuperuser])
 def delete_player(request, player_id):
-    if request.method == "DELETE":
-        try:
-            player = User.objects.get(id=player_id)
-            player.delete()
-            return JsonResponse({"message": "Player deleted successfully"})
-        except User.DoesNotExist:
-            return JsonResponse({"error": "Player not found"}, status=404)
+    confirm = request.GET.get('confirm', 'false').lower() == 'true'
+    if request.user.id == int(player_id):
+        return JsonResponse({"error": "You cannot delete yourself"}, status=403)
+    try:
+        player = User.objects.get(id=player_id)
+    except User.DoesNotExist:
+        return JsonResponse({"error": "Player not found"}, status=404)
+    records_exist = Record.objects.filter(player_id=player_id).exists()
+    if records_exist and not confirm:
+        return JsonResponse(
+            {"warning": "Player is present in records. Confirm deletion?", "requires_confirmation": True},
+            status=409
+        )
+    if records_exist and confirm:
+        Record.objects.filter(player_id=player_id).delete()
+    player.delete()
+    return JsonResponse({"message": "Player deleted successfully"})
 
 
 @csrf_exempt
@@ -241,14 +251,25 @@ def add_game(request):
 @api_view(['DELETE'])
 @permission_classes([IsSuperuser])
 def delete_game(request, game_id):
-    # Удалить игру
-    if request.method == "DELETE":
-        try:
-            game = Game.objects.get(id=game_id)
-            game.delete()
-            return JsonResponse({"message": "Game deleted"})
-        except Game.DoesNotExist:
-            return JsonResponse({"error": "Game not found"}, status=404)
+    confirm = request.GET.get('confirm', 'false').lower() == 'true'
+    try:
+        game = Game.objects.get(id=game_id)
+    except Game.DoesNotExist:
+        return JsonResponse({"error": "Game not found"}, status=404)
+    
+    # Проверка связанных записей
+    if not confirm and Record.objects.filter(game=game).exists():
+        return JsonResponse(
+            {"warning": "Игра присутствует в рекордах. Подтвердите удаление?", "requires_confirmation": True},
+            status=409
+        )
+    
+    # Удаление после подтверждения
+    if confirm:
+        Record.objects.filter(game=game).delete()
+    
+    game.delete()
+    return JsonResponse({"message": "Игра успешно удалена"})
 
 
 @csrf_exempt

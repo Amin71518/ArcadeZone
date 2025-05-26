@@ -60,8 +60,7 @@ const AdmPanel = () => {
 
 
   const [confirmModal, setConfirmModal] = useState({ open: false, playerId: null, action: null });
-
-  const navigate = useNavigate();
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState({ open: false, type: '', id: '' });
 
   const handleShowPlayers = async () => {
     try {
@@ -93,7 +92,12 @@ const AdmPanel = () => {
       setPlayerIdToDelete('');
       handleShowPlayers();
     } catch (error) {
-      setPlayerMessage(error.message);
+      if (error.message === 'confirm_required') {
+        setPlayerMessage('Игрок найден. Требуется подтверждение удаления.');
+        setDeleteConfirmModal({ open: true, type: 'player', id: playerIdToDelete });
+      } else {
+        setPlayerMessage(error.message);
+      }
     }
   };
 
@@ -108,7 +112,12 @@ const AdmPanel = () => {
       setGameMessage(`Игра с ID ${gameIdToDelete} удалена`);
       setGameIdToDelete('');
     } catch (error) {
-      setGameMessage(error.message);
+      if (error.message === 'confirm_required') {
+        setGameMessage('Игра найдена. Требуется подтверждение удаления.');
+        setDeleteConfirmModal({ open: true, type: 'game', id: gameIdToDelete });
+      } else {
+        setGameMessage(error.message);
+      }
     }
   };
 
@@ -184,8 +193,7 @@ const AdmPanel = () => {
   const handleDeleteRecord = async (e) => {
     e.preventDefault();
     if (!recordPlayerId || !recordGameId) {
-      setRecordMessage('Введите ID игрока и ID игры для удаления рекорда');
-      return;
+      return setRecordMessage('Введите ID игрока и ID игры для удаления рекорда');
     }
     try {
       await deleteRecord(recordPlayerId, recordGameId, token);
@@ -197,16 +205,34 @@ const AdmPanel = () => {
     }
   };
 
-  // Галочка/крестик
-  function openConfirmModal(playerId, action) {
-    setConfirmModal({ open: true, playerId, action });
-  }
+  const handleConfirmedDelete = async () => {
+    try {
+      const { type, id } = deleteConfirmModal;
+      if (type === 'player') {
+        await deletePlayer(id, token, true);
+        setPlayerMessage(`Игрок с ID ${id} удалён`);
+        setPlayerIdToDelete('');
+        handleShowPlayers();
+      } else if (type === 'game') {
+        await deleteGame(id, token, true);
+        setGameMessage(`Игра с ID ${id} удалена`);
+        setGameIdToDelete('');
+      }
+    } catch (error) {
+      if (deleteConfirmModal.type === 'player') {
+        setPlayerMessage(error.message);
+      } else {
+        setGameMessage(error.message);
+      }
+    } finally {
+      setDeleteConfirmModal({ open: false, type: '', id: '' });
+    }
+  };
 
-  function closeConfirmModal() {
-    setConfirmModal({ open: false, playerId: null, action: null });
-  }
+  const openConfirmModal = (playerId, action) => setConfirmModal({ open: true, playerId, action });
+  const closeConfirmModal = () => setConfirmModal({ open: false, playerId: null, action: null });
 
-  async function handleConfirmAction() {
+  const handleConfirmAction = async () => {
     try {
       if (confirmModal.action === 'approve') {
         await makeStaff(confirmModal.playerId, token, true);
@@ -215,14 +241,23 @@ const AdmPanel = () => {
       }
       setPlayers(players => players.filter(p => p.id !== confirmModal.playerId));
       closeConfirmModal();
-    } catch (e) {
+    } catch {
       alert('Ошибка при изменении статуса');
     }
-  }
+  };
+
+  const resetFormStates = () => {
+    setPlayerIdToDelete('');
+    setGameIdToDelete('');
+    setRecordPlayerId('');
+    setRecordGameId('');
+    setPlayerMessage('');
+    setGameMessage('');
+    setRecordMessage('');
+  };
 
   return (
     <div className="adm-row">
-      {/* Левая половина */}
       <div className="adm-left">
         {!playersLoaded ? (
           <button
@@ -263,13 +298,14 @@ const AdmPanel = () => {
         )}
       </div>
 
-      {/* Правая половина */}
       <div className="adm-right">
         <div className="adm-btn-group">
           <button
             onClick={() => {
+              const newState = !showPlayerForm;
               if (!showPlayerForm) closeAllForms();
               setShowPlayerForm((prev) => !prev);
+              if (!newState) resetFormStates();
             }}
           >
             Удалить игрока
@@ -278,13 +314,7 @@ const AdmPanel = () => {
             <div className="adm-popup-form">
               <button className="close" onClick={() => setShowPlayerForm(false)}>×</button>
               <form onSubmit={handleDeletePlayer}>
-                <input
-                  type="text"
-                  placeholder="ID игрока"
-                  value={playerIdToDelete}
-                  onChange={e => setPlayerIdToDelete(e.target.value)}
-                  style={{ marginRight: 8 }}
-                />
+                <input type="text" placeholder="ID игрока" value={playerIdToDelete} onChange={e => setPlayerIdToDelete(e.target.value)} style={{ marginRight: 8 }} />
                 <button type="submit">Удалить</button>
                 {playerMessage && <div style={{ color: 'red', marginTop: 4 }}>{playerMessage}</div>}
               </form>
@@ -350,8 +380,10 @@ const AdmPanel = () => {
         <div className="adm-btn-group">
           <button
             onClick={() => {
+              const newState = !showGameForm;
               if (!showGameForm) closeAllForms();
               setShowGameForm((prev) => !prev);
+              if (!newState) resetFormStates();
             }}
           >
             Удалить игру
@@ -377,15 +409,17 @@ const AdmPanel = () => {
         <div className="adm-btn-group">
           <button
             onClick={() => {
+              const newState = !showRecordForm;
               if (!showRecordForm) closeAllForms();
               setShowRecordForm((prev) => !prev);
+              if (!newState) resetFormStates();
             }}
           >
             Удалить рекорд
           </button>
           {showRecordForm && (
             <div className="adm-popup-form">
-              <button className="close" onClick={() => setShowRecordForm(false)}>×</button>
+              <button className="close" onClick={() => { setShowRecordForm(false); resetFormStates(); }}>×</button>
               <form onSubmit={handleDeleteRecord}>
                 <input
                   type="text"
@@ -528,7 +562,6 @@ const AdmPanel = () => {
         </button>
       </div>
 
-      {/* Модалка подтверждения */}
       {confirmModal.open && (
         <div className="adm-popup-form" style={{ left: '50%', top: '30%', transform: 'translate(-50%, 0)' }}>
           <div style={{ marginBottom: 8 }}>
@@ -537,7 +570,19 @@ const AdmPanel = () => {
               : 'Снять с пользователя права staff?'}
           </div>
           <button onClick={handleConfirmAction}>Подтвердить</button>
-          <button onClick={closeConfirmModal} style={{ marginLeft: 8 }}>Отменить</button>
+          <button onClick={closeConfirmModal} style={{ marginLeft: 8 }}>Отмена</button>
+        </div>
+      )}
+
+      {deleteConfirmModal.open && (
+        <div className="adm-popup-form" style={{ left: '50%', top: '30%', transform: 'translate(-50%, 0)' }}>
+          <p>
+            {deleteConfirmModal.type === 'player'
+              ? 'У игрока есть рекорды. Удалить игрока и все связанные записи?'
+              : 'У игры есть рекорды. Удалить игру и все связанные записи?'}
+          </p>
+          <button onClick={handleConfirmedDelete}>Подтвердить</button>
+          <button onClick={() => setDeleteConfirmModal({ open: false, type: '', id: '' })} style={{ marginLeft: 8 }}>Отмена</button>
         </div>
       )}
     </div>
