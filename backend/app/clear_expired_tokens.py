@@ -1,9 +1,7 @@
 import datetime
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.utils.timezone import now
 from django.utils import timezone
-from datetime import timezone as dt_timezone
 import jwt
 from .models import BlackListedToken
 from django.core.management import call_command

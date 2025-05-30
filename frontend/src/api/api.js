@@ -1,5 +1,4 @@
 const BASE_URL = import.meta.env.VITE_API_URL;
-//const BASE_URL = '[http://localhost:8000](http://localhost:8000)'; // или адрес твоего backend-сервера
 
 // Авторизация
 export async function loginPlayer(email, password) {

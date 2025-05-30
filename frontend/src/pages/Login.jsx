@@ -2,6 +2,7 @@ import { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { loginPlayer } from '../api/api';
 import { useNavigate, Link } from 'react-router-dom'; // Добавлен Link
+import './login.css';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -25,9 +26,9 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
+    <div>
       <h2>Вход</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="login-container">
         <input
           type="email"
           placeholder="Email"

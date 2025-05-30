@@ -2,6 +2,7 @@ import { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { registerPlayer } from '../api/api';
 import { useNavigate, Link } from 'react-router-dom'; // Добавлен Link
+import './login.css';
 
 const Register = () => {
   const [formData, setFormData] = useState({ email: '', username: '', password: '' });
@@ -29,8 +30,8 @@ const Register = () => {
   };
 
   return (
-    <div className="register-container">
-      <form onSubmit={handleSubmit}>
+    <div>
+      <form onSubmit={handleSubmit} className="login-container">
         <h2>Регистрация</h2>
 
         <input
